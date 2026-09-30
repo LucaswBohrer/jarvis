@@ -110,15 +110,22 @@ function makeEl(id) {
         }
       }
       if (this._id === "memory-list") {
-        // Rows nest title/meta inside .r-main; the empty-state is a bare
-        // div whose text is the whole message.
-        const main = child.children[0];
-        const title = main && main.children[0];
-        const meta = main && main.children[1];
-        memoryItems.push({
-          title: title ? title._text : child._text,
-          meta: meta ? meta._text : null,
-        });
+        // Rows nest title/meta inside .r-main; the empty-state is a
+        // structured div.empty whose message lives in .e-title.
+        if (String(child.className || "").split(/\s+/).indexOf("empty") >= 0) {
+          const et = child.children.find(
+            (c) => String(c.className || "").split(/\s+/).indexOf("e-title") >= 0
+          );
+          memoryItems.push({ title: et ? et._text : child._text, meta: null });
+        } else {
+          const main = child.children[0];
+          const title = main && main.children[0];
+          const meta = main && main.children[1];
+          memoryItems.push({
+            title: title ? title._text : child._text,
+            meta: meta ? meta._text : null,
+          });
+        }
       }
       return child;
     },
