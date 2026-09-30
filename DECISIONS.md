@@ -192,6 +192,16 @@ bind, so this does not conflict with it.
   due); `last_surfaced_at` + the `commitment.surfaced` audit are stamped in
   the SAME tx as the response persist, so a charge is never shown twice nor
   lost between display and stamp.
+- D43. First-boot migrations create the sqlite file's parent dir themselves
+  (`migrations/env.py::_ensure_parent_dir`, F3.4 clean-room fix): a fresh
+  clone has no `./data/`, and alembic runs before the app's own mkdir. Path
+  resolution mirrors `Database.db_file()` exactly
+  (`sqlite+aiosqlite:///./data/jarvis.db` -> `./data/jarvis.db`, relative to
+  CWD -- never urlsplit's absolute `/data/jarvis.db`); the NEXUS-database
+  guard still runs first.
+- D44. Empty optional env vars mean "unset": `JARVIS_LLM_INPUT_PRICE_PER_1M_USD=`
+  (as shipped in `.env.example`) parses to `None` instead of crashing
+  pydantic float parsing at first boot (F3.4 clean-room fix).
 
 ## Step gates
 

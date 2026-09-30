@@ -76,7 +76,17 @@ def _estimate_cost(
 
 
 class OpenAIProvider:
-    """Real LLM provider behind the LLM port. Constructed by the API layer."""
+    """Real LLM provider behind the LLM port. Constructed by the API layer.
+
+    Failure policy (deliberate, §F3.4):
+    - No retries. A failed call maps to a port-level LLMError and the
+      orchestrator falls back deterministically; retrying paid LLM calls
+      aggressively would amplify cost and latency without a clear benefit.
+    - HTTP redirects are disabled: the API endpoint must not bounce the
+      request (and the Authorization header) somewhere unexpected.
+    - The API key lives only in the client's Authorization header. It never
+      appears in error messages, logs, audit events or responses.
+    """
 
     name = "openai"
 
@@ -108,7 +118,10 @@ class OpenAIProvider:
         }
         try:
             self._client = httpx.AsyncClient(
-                base_url=self._base_url, transport=transport, headers=headers
+                base_url=self._base_url,
+                transport=transport,
+                headers=headers,
+                follow_redirects=False,
             )
         except httpx.InvalidURL as exc:
             log.warning("openai proxy env malformed (%s); connecting directly", exc)
@@ -117,6 +130,7 @@ class OpenAIProvider:
                 transport=transport,
                 headers=headers,
                 trust_env=False,
+                follow_redirects=False,
             )
 
     def _payload(self, request: LLMRequest) -> dict[str, Any]:
@@ -173,6 +187,10 @@ class OpenAIProvider:
 
         if response.status_code == 429:
             raise LLMUnavailableError("openai rate limited (429)")
+        if response.status_code in (401, 403):
+            # Auth failure: the key is rejected. Never confuse this with a
+            # malformed model output, and never echo anything sensitive.
+            raise LLMUnavailableError(f"openai authentication failed ({response.status_code})")
         if response.status_code >= 500:
             raise LLMUnavailableError(f"openai server error: {response.status_code}")
         if response.status_code != 200:
@@ -183,6 +201,11 @@ class OpenAIProvider:
         try:
             body = response.json()
             content = body["choices"][0]["message"]["content"]
+        except (ValueError, KeyError, IndexError, TypeError) as exc:
+            raise LLMMalformedError(f"openai returned unparseable plan: {exc}") from exc
+        if not content or not content.strip():
+            raise LLMMalformedError("openai returned empty content")
+        try:
             plan = NexusResponsePlan.model_validate_json(content)
         except (ValueError, KeyError, IndexError, TypeError) as exc:
             raise LLMMalformedError(f"openai returned unparseable plan: {exc}") from exc

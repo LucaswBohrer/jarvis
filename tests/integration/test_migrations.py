@@ -27,6 +27,26 @@ def _tables(con):
     return {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
 
 
+def test_first_boot_creates_missing_parent_dir(tmp_path, monkeypatch):
+    """F3.4 clean-room regression: a fresh clone has no ./data/ directory.
+
+    alembic must create the sqlite file's parent dir itself (the app only
+    does this at startup, which runs *after* migrations).
+    """
+    db_path = tmp_path / "nodata" / "jarvis.db"
+    assert not db_path.parent.exists()
+    cfg, _url = _cfg(db_path, monkeypatch)
+
+    command.upgrade(cfg, "head")
+
+    assert db_path.exists()
+    con = sqlite3.connect(db_path)
+    try:
+        assert {"sessions", "messages", "tasks", "audit_logs"} <= _tables(con)
+    finally:
+        con.close()
+
+
 def test_migration_up_down_up(tmp_path, monkeypatch):
     db_path = tmp_path / "mig.db"
     cfg, url = _cfg(db_path, monkeypatch)

@@ -146,6 +146,13 @@ class Settings(BaseSettings):
             raise ValueError("llm timeout out of bounds")
         return value
 
+    @field_validator("llm_input_price_per_1m_usd", "llm_output_price_per_1m_usd", mode="before")
+    @classmethod
+    def _empty_price_to_none(cls, value: object) -> object:
+        # F3.4 clean-room fix: .env.example ships these as empty lines; an
+        # empty env var must mean "unset", not a float-parsing crash.
+        return None if value == "" else value
+
     @field_validator(
         "ctx_total_chars",
         "ctx_tail_chars",

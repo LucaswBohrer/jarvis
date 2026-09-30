@@ -227,13 +227,13 @@ inventada.
 
 ## Testing
 
-**255 testes, todos passando** (verificado em 2026-09-30, run próprio:
-`pytest tests/ -q`, ~44s).
+**300 testes, todos passando** (verificado em 2026-09-30, run próprio:
+`pytest tests/ -q`, ~48s).
 
 | Camada | Testes | O que cobre |
 |---|---|---|
-| `unit/` | 111 | state machine, policy, redaction, memory safety, contratos, context builder |
-| `integration/` | 134 | orquestrador, adapter NEXUS (stub), API, bateria de cancelamento (12 cenários), recovery, memória, FTS5, commitments, contexto |
+| `unit/` | 129 | state machine, policy, redaction, memory safety, contratos, context builder, LLM provider (openai + segurança da key) |
+| `integration/` | 166 | orquestrador, adapter NEXUS (stub), API, bateria de cancelamento (12 cenários), recovery, memória, FTS5, commitments, contexto, session flow, conversation history |
 | `contract/` | 5 | não-acoplamento com o NEXUS |
 | `e2e/` | 5 | slice NEXUS completo, grounding com contexto, cobrança de compromissos |
 
@@ -265,7 +265,16 @@ chamada live à OpenAI (sem API key neste ambiente; provider validado com
   imutável com digest SHA-256 + budgets determinísticos + grounding preservado.
   Slice 3: compromissos com lifecycle próprio, sweep idempotente e cobrança
   in-conversation (`📌 Lembretes`).
-- **Fase 3 — em definição.** Escopo ainda não definido; nada a declarar.
+- **Fase 3 — Interface local conversável (em andamento).**
+  - F3.1 web shell: `GET /` serve a página mínima que consulta `GET /health`.
+  - F3.2 session flow: criar sessão, enviar mensagens, estados
+    IDLE/PROCESSING/COMPLETED/ERROR/CANCELLED, erros honestos.
+  - F3.3 conversation rendering: `GET /api/v1/sessions/{id}/messages`
+    (read-only); histórico restaurado após reload.
+  - F3.4 real LLM provider: `OpenAIProvider` (REST via httpx, sem SDK) atrás
+    da porta `LLMProvider`; `JARVIS_LLM_PROVIDER=fake|openai`; smoke
+    `scripts/smoke_llm.py`; reprodução local documentada em
+    `docs/LOCAL_DEVELOPMENT.md`.
 - **Fase 4 — JARVIS Orb Interface (apenas documentação, NÃO implementada).**
   O orb é uma representação visual do estado do sistema — `IDLE`, `LISTENING`,
   `THINKING`, `EXECUTING`, `SPEAKING`, `ERROR`. O orb **não é** o cérebro do
@@ -279,6 +288,9 @@ cp .env.example .env          # nunca commite um .env real
 .venv/bin/python -m alembic upgrade head
 .venv/bin/python -m jarvis    # serve em 127.0.0.1:8123
 ```
+
+Guia completo desde zero (incluindo Windows PowerShell, provider LLM real e
+checklist de primeiro boot): [`docs/LOCAL_DEVELOPMENT.md`](docs/LOCAL_DEVELOPMENT.md).
 
 Configuração via prefixo `JARVIS_` (ver `.env.example` para a lista completa):
 `JARVIS_PORT=8123` (8100 colide com o proxy nexus-deploy nesta máquina),

@@ -6,6 +6,7 @@ import asyncio
 import os
 import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
 from sqlalchemy import pool
@@ -32,9 +33,38 @@ def _db_url() -> str:
     return url
 
 
+def _ensure_parent_dir(url: str) -> None:
+    """Create the sqlite file's parent dir on first boot (F3.4 clean-room fix).
+
+    The app creates the parent dir at startup (dependencies.build_app_state),
+    but alembic runs before the app exists -- a fresh clone has no ./data/.
+    Mirrors Database.db_file(): for "sqlite+aiosqlite:///./data/jarvis.db"
+    the file path is "./data/jarvis.db" (relative to CWD), NOT urlsplit's
+    absolute "/data/jarvis.db". Only applies to local sqlite URLs; the NEXUS
+    guard in _db_url runs first.
+    """
+    if "://" not in url:
+        return
+    # Mirror Database.db_file() exactly: strip the "scheme:///" prefix so
+    # "sqlite+aiosqlite:///./data/jarvis.db" -> "./data/jarvis.db" (relative
+    # to CWD) and "sqlite+aiosqlite:////tmp/x.db" -> "/tmp/x.db" (absolute).
+    path = url
+    for prefix in ("sqlite+aiosqlite:///", "sqlite:///"):
+        if path.startswith(prefix):
+            path = path[len(prefix) :]
+            break
+    else:
+        return  # not a recognized local sqlite URL form
+    if not path or path == ":memory:":
+        return
+    Path(path).expanduser().parent.mkdir(parents=True, exist_ok=True)
+
+
 def run_migrations_offline() -> None:
+    url = _db_url()
+    _ensure_parent_dir(url)
     context.configure(
-        url=_db_url(),
+        url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -50,7 +80,9 @@ def do_run_migrations(connection):  # type: ignore[no-untyped-def]
 
 
 async def run_migrations_online() -> None:
-    config.set_main_option("sqlalchemy.url", _db_url())
+    url = _db_url()
+    _ensure_parent_dir(url)
+    config.set_main_option("sqlalchemy.url", url)
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
