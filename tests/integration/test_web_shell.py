@@ -58,7 +58,9 @@ async def test_page_queries_health_live(client):
     r = await client.get("/")
     assert r.status_code == 200
     assert 'fetch("/health"' in r.text
-    assert "Backend: checking" in r.text
+    # F3.2: the health indicator moved into the header; it still starts in a
+    # "checking" state before the live fetch resolves.
+    assert "checking" in r.text.lower()
     # "Online" is only ever rendered after the live fetch returns
     # {"status": "ok"} — never hardcoded by the server.
     assert 'data.status === "ok"' in r.text

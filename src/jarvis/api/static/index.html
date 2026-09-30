@@ -10,52 +10,256 @@
     margin: 0;
     min-height: 100vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
     background: #0d1117;
     color: #e6edf3;
     font-family: system-ui, -apple-system, sans-serif;
   }
-  main { text-align: center; padding: 2rem; }
-  h1 { font-size: 3rem; letter-spacing: 0.35em; margin: 0 0 0.25rem 1rem; }
-  .sub { color: #8b949e; margin: 0 0 2rem 0; }
-  .dot {
-    width: 14px; height: 14px; border-radius: 50%;
-    background: #8b949e; margin: 0 auto 1rem auto;
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid #21262d;
   }
+  header h1 { font-size: 1.25rem; letter-spacing: 0.3em; margin: 0; }
+  header .sub { color: #8b949e; font-size: 0.85rem; }
+  header .backend { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-family: monospace; font-size: 0.8rem; color: #8b949e; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #8b949e; }
   .dot.ok { background: #3fb950; }
   .dot.down { background: #f85149; }
-  #backend-status { font-family: monospace; color: #8b949e; }
+  main { flex: 1; display: flex; flex-direction: column; max-width: 46rem; width: 100%; margin: 0 auto; padding: 1rem 1.25rem; box-sizing: border-box; }
+  #conversation { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem 0 1rem 0; }
+  .msg { max-width: 85%; padding: 0.6rem 0.9rem; border-radius: 0.6rem; white-space: pre-wrap; word-break: break-word; font-size: 0.95rem; line-height: 1.45; }
+  .msg.user { align-self: flex-end; background: #1f6feb; color: #fff; }
+  .msg.assistant { align-self: flex-start; background: #161b22; border: 1px solid #30363d; }
+  .msg.system { align-self: center; background: transparent; color: #8b949e; font-size: 0.85rem; border: 1px dashed #30363d; }
+  .msg.error { align-self: flex-start; background: #3d1414; border: 1px solid #f85149; color: #ffa198; }
+  .meta { font-size: 0.7rem; color: #8b949e; margin-top: 0.35rem; font-family: monospace; }
+  #state-line { font-size: 0.8rem; color: #8b949e; min-height: 1.25rem; padding: 0.25rem 0; font-family: monospace; }
+  #composer { display: flex; gap: 0.5rem; padding: 0.5rem 0 0.25rem 0; }
+  #input {
+    flex: 1; resize: none; background: #161b22; color: #e6edf3;
+    border: 1px solid #30363d; border-radius: 0.5rem; padding: 0.6rem 0.8rem;
+    font: inherit; font-size: 0.95rem;
+  }
+  #input:disabled { opacity: 0.6; }
+  button {
+    background: #238636; color: #fff; border: none; border-radius: 0.5rem;
+    padding: 0 1.25rem; font: inherit; cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button#cancel { background: #8957e5; }
 </style>
 </head>
 <body>
-<main>
+<header>
   <h1>JARVIS</h1>
-  <p class="sub">Local Intelligence</p>
-  <div id="status-dot" class="dot" aria-hidden="true"></div>
-  <p id="backend-status">Backend: checking&hellip;</p>
+  <span class="sub">Local Intelligence</span>
+  <span class="backend"><span id="status-dot" class="dot" aria-hidden="true"></span><span id="backend-status">checking&hellip;</span></span>
+</header>
+<main>
+  <div id="conversation" aria-live="polite"></div>
+  <div id="state-line"></div>
+  <form id="composer">
+    <textarea id="input" rows="2" maxlength="2000" placeholder="Escreva uma mensagem&hellip;" aria-label="Mensagem"></textarea>
+    <button id="send" type="submit">Enviar</button>
+    <button id="cancel" type="button" hidden>Cancelar</button>
+  </form>
 </main>
 <script>
-(async function () {
-  var el = document.getElementById("backend-status");
-  var dot = document.getElementById("status-dot");
-  function setDown() {
-    el.textContent = "Backend: Unavailable";
-    dot.classList.add("down");
+(function () {
+  "use strict";
+
+  // Thin client only: this page renders and fetches the local JARVIS API
+  // (same origin). No policy, no tools, no NEXUS, no provider, no credentials.
+  var SESSION_KEY = "jarvis.session.id";
+
+  var conversation = document.getElementById("conversation");
+  var stateLine = document.getElementById("state-line");
+  var form = document.getElementById("composer");
+  var input = document.getElementById("input");
+  var sendBtn = document.getElementById("send");
+  var cancelBtn = document.getElementById("cancel");
+
+  var uiState = "IDLE";       // IDLE | PROCESSING | COMPLETED | ERROR | CANCELLED
+  var inFlight = null;        // AbortController for the current send, if any
+  var sessionId = null;
+
+  function setState(s, label) {
+    uiState = s;
+    stateLine.textContent = label || "";
   }
-  try {
-    var res = await fetch("/health", { cache: "no-store" });
-    if (!res.ok) { setDown(); return; }
-    var data = await res.json();
-    if (data && data.status === "ok") {
-      el.textContent = "Backend: Online (v" + data.version + ")";
-      dot.classList.add("ok");
-    } else {
-      setDown();
+
+  function bubble(kind, text, meta) {
+    var div = document.createElement("div");
+    div.className = "msg " + kind;
+    var body = document.createElement("div");
+    body.textContent = text;   // textContent only: API text is never parsed as HTML
+    div.appendChild(body);
+    if (meta) {
+      var m = document.createElement("div");
+      m.className = "meta";
+      m.textContent = meta;
+      div.appendChild(m);
     }
-  } catch (e) {
-    setDown();
+    conversation.appendChild(div);
+    conversation.scrollTop = conversation.scrollHeight;
   }
+
+  function setBusy(busy) {
+    input.disabled = busy;
+    sendBtn.disabled = busy;
+    cancelBtn.hidden = !busy;
+  }
+
+  // -- backend health (F3.1 behavior, kept) --------------------------------
+  (function checkHealth() {
+    var el = document.getElementById("backend-status");
+    var dot = document.getElementById("status-dot");
+    function down() {
+      el.textContent = "unavailable";
+      dot.classList.add("down");
+    }
+    fetch("/health", { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) { down(); return; }
+        return res.json();
+      })
+      .then(function (data) {
+        if (data && data.status === "ok") {
+          el.textContent = "online (v" + data.version + ")";
+          dot.classList.add("ok");
+        } else {
+          down();
+        }
+      })
+      .catch(down);
+  })();
+
+  // -- sessions ------------------------------------------------------------
+  function createSession() {
+    return fetch("/api/v1/sessions", { method: "POST", cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) { throw new Error("session.create.failed:" + res.status); }
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !data.id) { throw new Error("session.create.bad_response"); }
+        sessionId = data.id;
+        try { sessionStorage.setItem(SESSION_KEY, sessionId); } catch (e) { /* ignore */ }
+        return sessionId;
+      });
+  }
+
+  function ensureSession() {
+    if (sessionId) { return Promise.resolve(sessionId); }
+    try { sessionId = sessionStorage.getItem(SESSION_KEY) || null; } catch (e) { sessionId = null; }
+    if (sessionId) { return Promise.resolve(sessionId); }
+    return createSession();
+  }
+
+  // -- error rendering: only what the API actually returned ----------------
+  function apiErrorText(status, payload) {
+    var key = (payload && payload.error && payload.error.message_key) || "unknown";
+    if (status === 0) { return "JARVIS indisponível."; }
+    return "Erro (" + status + "): " + key;
+  }
+
+  // -- message send --------------------------------------------------------
+  function postMessage(sid, content, signal) {
+    return fetch("/api/v1/sessions/" + encodeURIComponent(sid) + "/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: content }),
+      signal: signal,
+      cache: "no-store"
+    });
+  }
+
+  function send(content) {
+    setState("PROCESSING", "processando…");
+    setBusy(true);
+    bubble("user", content);
+
+    var controller = new AbortController();
+    inFlight = controller;
+
+    function attempt(retryAllowed) {
+      return ensureSession()
+        .then(function (sid) { return postMessage(sid, content, controller.signal); })
+        .then(function (res) {
+          if (res.status === 404 && retryAllowed) {
+            // Stored session is gone (e.g. DB reset): create a fresh one and retry once.
+            return res.json().catch(function () { return null; }).then(function (payload) {
+              var gone = payload && payload.error && payload.error.message_key === "session.not_found";
+              if (!gone) { return { res: res, payload: payload }; }
+              sessionId = null;
+              try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+              return createSession().then(function (sid) {
+                return postMessage(sid, content, controller.signal).then(function (r2) {
+                  return r2.json().catch(function () { return null; }).then(function (p2) {
+                    return { res: r2, payload: p2 };
+                  });
+                });
+              });
+            });
+          }
+          return res.json().catch(function () { return null; }).then(function (payload) {
+            return { res: res, payload: payload };
+          });
+        })
+        .then(function (out) {
+          var res = out.res, payload = out.payload;
+          if (!res.ok) {
+            setState("ERROR", "erro");
+            bubble("error", apiErrorText(res.status, payload));
+            return;
+          }
+          // AssistantResponse: { task_id, status, message, source, ... }
+          var meta = "status: " + (payload.status || "?") + " · fonte: " + (payload.source || "?");
+          bubble("assistant", payload.message || "", meta);
+          setState("COMPLETED", "resposta recebida");
+        })
+        .catch(function (err) {
+          if (err && err.name === "AbortError") {
+            setState("CANCELLED", "cancelada");
+            bubble("system", "Resposta cancelada.");
+          } else {
+            setState("ERROR", "erro");
+            bubble("error", apiErrorText(0, null));
+          }
+        })
+        .then(function () {
+          inFlight = null;
+          setBusy(false);
+          if (uiState === "COMPLETED" || uiState === "CANCELLED" || uiState === "ERROR") {
+            setState("IDLE", "pronta");
+          }
+        });
+    }
+
+    attempt(true);
+  }
+
+  cancelBtn.addEventListener("click", function () {
+    if (inFlight) { inFlight.abort(); }
+  });
+
+  form.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var text = input.value.trim();
+    if (!text || uiState === "PROCESSING") { return; }
+    input.value = "";
+    send(text);
+  });
+
+  // Bootstrap: backend health runs above; create the session eagerly so the
+  // first send never waits on it. Failure is non-fatal: send() retries.
+  ensureSession().then(
+    function () { setState("IDLE", "pronta"); },
+    function () { setState("IDLE", "pronta (sessão será criada ao enviar)"); }
+  );
 })();
 </script>
 </body>
