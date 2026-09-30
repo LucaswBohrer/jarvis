@@ -3,8 +3,8 @@
 // Runs the page's inline <script> under Node with stubbed DOM / fetch /
 // sessionStorage and reports what the page did as JSON:
 //   { fetchCalls, bubbles, memoryItems, stateLine, storedSession, views,
-//     orbState, dataMotion, sessionRows, taskRows, activityRows, auditRows,
-//     nexusStatus, panelTask, greeting, bootDone, backendStatus }
+//     viewHistory, orbState, dataMotion, sessionRows, taskRows, activityRows,
+//     auditRows, nexusStatus, panelTask, greeting, bootDone, backendStatus }
 // or { error } if the page script itself threw.
 //
 // Usage: node web_shell_harness.js <index.html> <scenario.json>
@@ -158,9 +158,30 @@ function makeEl(id) {
 }
 
 const elements = {};
+const viewHistory = []; // every time a view section becomes visible (hidden -> false)
+// Layout-regression support: the F3.7 overlap bug was CSS (.view{display:flex}
+// defeating the hidden attribute), invisible to the stub DOM. Tracking the
+// hidden-flag transitions proves the JS view machine shows exactly one view
+// at a time; a companion static test asserts the CSS guard exists.
+function trackViewVisibility(el, id) {
+  if (!id || id.indexOf("view-") !== 0) return;
+  let hv = false;
+  Object.defineProperty(el, "hidden", {
+    get() { return hv; },
+    set(v) {
+      hv = !!v;
+      if (!hv) viewHistory.push(id.slice(5));
+    },
+    enumerable: true,
+    configurable: true,
+  });
+}
 const documentStub = {
   getElementById(id) {
-    if (!elements[id]) elements[id] = makeEl(id);
+    if (!elements[id]) {
+      elements[id] = makeEl(id);
+      trackViewVisibility(elements[id], id);
+    }
     return elements[id];
   },
   createElement() {
@@ -371,6 +392,7 @@ const VIEWS = ["home", "sessions", "tasks", "memory", "activity", "audit", "nexu
       stateLine: textOf("state-line"),
       storedSession: sessionStorageStub.getItem("jarvis.session.id"),
       views: VIEWS.filter((v) => elements["view-" + v] && !elements["view-" + v].hidden),
+      viewHistory,
       orbState: attrOf("orb-wrap", "data-orb"),
       dataMotion: attrOf("app", "data-motion"),
       sessionRows: rowParts("session-list"),
