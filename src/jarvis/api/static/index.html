@@ -136,6 +136,7 @@ body {
   transition: opacity 320ms ease;
 }
 #boot.done { opacity: 0; pointer-events: none; }
+#boot[hidden] { display: none; }
 #boot .wordmark {
   font-size: 2rem; letter-spacing: 0.55em; text-indent: 0.55em; font-weight: 600;
   background: linear-gradient(100deg, var(--text) 30%, var(--accent) 50%, var(--text) 70%);
@@ -2118,9 +2119,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     if (b && b.classList && !b.classList.contains("done")) {
       b.classList.add("done");
       // remove from layout after the fade: the invisible overlay must not
-      // intercept geometry checks, pointer events or assistive tech
+      // intercept geometry checks, pointer events or assistive tech.
+      // Uses the hidden attribute, the single visibility mechanism of the
+      // view machine by architectural decision (see test_layout_regression).
       if (typeof setTimeout === "function") {
-        setTimeout(function () { b.style.display = "none"; }, 400);
+        setTimeout(function () { b.hidden = true; }, 400);
       }
     }
     S.booted = true;
