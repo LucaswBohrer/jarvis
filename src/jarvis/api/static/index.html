@@ -993,11 +993,23 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     else if (name === "system") { loadSystemView(); }
   }
 
+  // go(): navigate via the hash. The hashchange listener renders the view,
+  // so go() must NOT call showView directly when the hash actually changes —
+  // otherwise list views (sessions, tasks, …) load twice and rows duplicate.
   function go(name) {
+    var target = "#/" + name;
     if (typeof location !== "undefined" && location) {
-      try { location.hash = "#/" + name; } catch (e) { /* ignore */ }
+      try {
+        if (location.hash === target) {
+          // Same view re-clicked: no hashchange will fire, render directly.
+          showView(name);
+        } else {
+          location.hash = target; // hashchange -> showView(initialView())
+        }
+      } catch (e) { showView(name); }
+    } else {
+      showView(name);
     }
-    showView(name);
   }
 
   function initialView() {
@@ -1364,6 +1376,12 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function bubble(role, text, meta) {
     var conv = $("conversation");
     if (!conv) { return null; }
+    // The "Nenhuma mensagem ainda." placeholder must disappear as soon as
+    // real content arrives — it is honest only while the thread is empty.
+    if (role !== "system") {
+      var stale = document.getElementById("thread-empty");
+      if (stale && stale.parentNode) { stale.parentNode.removeChild(stale); }
+    }
     var div = document.createElement("div");
     div.className = "msg " + role;
     div.textContent = text;
@@ -1583,7 +1601,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       setText("panel-turns", String(S.turns));
       updateHomeStatus();
       if (!items.length) {
-        bubble("system", "Nenhuma mensagem ainda.");
+        var ph = bubble("system", "Nenhuma mensagem ainda.");
+        if (ph) { ph.id = "thread-empty"; }
       }
       items.forEach(function (m) {
         if (m.role === "user") { bubble("user", m.content || "", fmtTime(m.created_at)); }

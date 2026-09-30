@@ -40,6 +40,17 @@ VERSION = "0.1.0"
 # Same origin as the API; the page only fetches the API (client role only).
 _WEB_ROOT = Path(__file__).resolve().parent / "static"
 
+# Tiny inline SVG favicon served at /favicon.ico (browsers request it
+# implicitly even without a <link> tag). Keeps the page a single
+# self-contained file with no <link>/<script src> in the HTML.
+_FAVICON_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+    '<rect width="64" height="64" rx="14" fill="#0a0f14"/>'
+    '<circle cx="32" cy="32" r="10" fill="#3fe0c3"/>'
+    '<circle cx="32" cy="32" r="17" fill="none" stroke="#3fe0c3" '
+    'stroke-opacity="0.45" stroke-width="2"/></svg>'
+)
+
 _STATUS_BY_CODE: dict[ErrorCode, int] = {
     ErrorCode.INPUT_INVALID: 422,
     ErrorCode.INTENT_UNSUPPORTED: 422,
@@ -292,6 +303,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/", include_in_schema=False)
     async def web_shell() -> FileResponse:
         return FileResponse(_WEB_ROOT / "index.html", media_type="text/html")
+
+    # Browsers request /favicon.ico implicitly even without a <link> tag; serve
+    # a tiny inline SVG so the console stays clean. The page itself remains a
+    # single self-contained file (no <link>/<script src> in the HTML).
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon() -> Response:
+        return Response(_FAVICON_SVG, media_type="image/svg+xml")
 
     # -- operational endpoints ---------------------------------------------
 
