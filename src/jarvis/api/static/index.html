@@ -159,6 +159,35 @@
     return createSession();
   }
 
+  // -- conversation history (F3.3: D1) ---------------------------------------
+  // Read-only restore after reload. The backend owns the order; the page only
+  // renders the received sequence as plain text (no HTML parsing).
+  function renderHistoryMessage(m) {
+    var kind = (m.role === "user" || m.role === "assistant" || m.role === "system")
+      ? m.role
+      : "assistant";
+    bubble(kind, m.content || "");
+  }
+
+  function loadHistory(sid) {
+    return fetch("/api/v1/sessions/" + encodeURIComponent(sid) + "/messages", { cache: "no-store" })
+      .then(function (res) {
+        if (res.status === 404) { return { notFound: true }; }
+        if (!res.ok) { throw new Error("history.failed:" + res.status); }
+        return res.json();
+      })
+      .then(function (payload) {
+        if (payload && payload.notFound) { return "not-found"; }
+        var items = (payload && Array.isArray(payload.messages)) ? payload.messages : [];
+        if (items.length === 0) {
+          bubble("system", "Nenhuma mensagem ainda.");
+        } else {
+          items.forEach(renderHistoryMessage);
+        }
+        return "ok";
+      });
+  }
+
   // -- error rendering: only what the API actually returned ----------------
   function apiErrorText(status, payload) {
     var key = (payload && payload.error && payload.error.message_key) || "unknown";
@@ -254,12 +283,32 @@
     send(text);
   });
 
-  // Bootstrap: backend health runs above; create the session eagerly so the
-  // first send never waits on it. Failure is non-fatal: send() retries.
-  ensureSession().then(
-    function () { setState("IDLE", "pronta"); },
-    function () { setState("IDLE", "pronta (sessão será criada ao enviar)"); }
-  );
+  // Bootstrap: backend health runs above. If a session id was stored, restore
+  // the conversation history (read-only); otherwise create a fresh session.
+  // History failure is non-fatal: the page stays usable.
+  (function bootstrap() {
+    var stored = null;
+    try { stored = sessionStorage.getItem(SESSION_KEY); } catch (e) { stored = null; }
+    ensureSession().then(function (sid) {
+      if (!(stored && stored === sid)) {
+        setState("IDLE", "pronta");
+        return;
+      }
+      loadHistory(sid).then(function (outcome) {
+        if (outcome === "not-found") {
+          // Stored session no longer exists: create a fresh one, once.
+          sessionId = null;
+          try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+          createSession().then(function () { setState("IDLE", "pronta"); });
+          return;
+        }
+        setState("IDLE", "pronta");
+      }, function () {
+        // History fetch failed (network/error): keep the page usable.
+        setState("IDLE", "pronta");
+      });
+    }, function () { setState("IDLE", "pronta (sessão será criada ao enviar)"); });
+  })();
 })();
 </script>
 </body>

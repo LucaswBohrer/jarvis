@@ -25,7 +25,7 @@ from ..domain.contracts.memory import (
     MemoryStatus,
     Sensitivity,
 )
-from ..domain.contracts.session import SessionRecord
+from ..domain.contracts.session import MessageRole, SessionRecord
 from ..domain.contracts.task import AssistantResponse
 from ..domain.errors import ErrorCategory, ErrorCode, JarvisError, JarvisException
 from ..observability.logging import configure_logging, get_logger, set_correlation_id
@@ -82,6 +82,19 @@ class MessageIn(BaseModel):
 
 class SessionOut(BaseModel):
     id: str
+
+
+class SessionMessageOut(BaseModel):
+    """Read-only view of a persisted conversation message (F3.3).
+
+    Only what the web shell needs to render history: role, content and
+    timestamp. Internal ids (message/session/task), idempotency keys and
+    any infrastructure metadata are deliberately excluded.
+    """
+
+    role: MessageRole
+    content: str
+    created_at: AwareDatetime
 
 
 class CancelOut(BaseModel):
@@ -298,6 +311,34 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             idempotency_key=idempotency_key,
         )
         return JSONResponse(response.model_dump(mode="json"))
+
+    @app.get("/api/v1/sessions/{session_id}/messages")
+    async def list_session_messages(
+        session_id: str, request: Request, state: AppState = Depends(_get_state)
+    ) -> JSONResponse:
+        # F3.3 (D1): read-only conversation history. No policy, no LLM, no
+        # NEXUS, no audit, no writes of any kind. Ordering is owned by the
+        # repository (created_at ascending); the response preserves it
+        # verbatim — the frontend must not re-sort.
+        cid = _cid(request)
+        session = await state.sessions.get(session_id)
+        if session is None:
+            raise _api_error(
+                ErrorCode.NOT_FOUND, ErrorCategory.VALIDATION, "session.not_found", cid
+            )
+        messages = await state.messages.list_by_session(session_id)
+        return JSONResponse(
+            {
+                "messages": [
+                    SessionMessageOut(
+                        role=message.role,
+                        content=message.content,
+                        created_at=message.created_at,
+                    ).model_dump(mode="json")
+                    for message in messages
+                ]
+            }
+        )
 
     @app.post("/api/v1/tasks/{task_id}/cancel", response_model=CancelOut)
     async def cancel_task(
