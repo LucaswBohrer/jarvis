@@ -4,7 +4,8 @@
 // sessionStorage and reports what the page did as JSON:
 //   { fetchCalls, bubbles, memoryItems, stateLine, storedSession, views,
 //     viewHistory, orbState, dataMotion, sessionRows, taskRows, activityRows,
-//     auditRows, nexusStatus, panelTask, greeting, bootDone, backendStatus }
+//     auditRows, nexusStatus, nexusProv, homeStatus, panelTask, greeting,
+//     bootDone, backendStatus }
 // or { error } if the page script itself threw.
 //
 // Usage: node web_shell_harness.js <index.html> <scenario.json>
@@ -400,6 +401,13 @@ const VIEWS = ["home", "sessions", "tasks", "memory", "activity", "audit", "nexu
       activityRows: rowParts("activity-list"),
       auditRows: rowParts("audit-list"),
       nexusStatus: textOf("nexus-status-text"),
+      nexusProv: textOf("nexus-prov"),
+      homeStatus: {
+        backend: textOf("hs-backend"),
+        session: textOf("hs-session"),
+        turns: textOf("hs-turns"),
+        task: textOf("hs-task"),
+      },
       panelTask: textOf("panel-task"),
       greeting: textOf("greeting-title"),
       bootDone: elements["boot"] ? elements["boot"].classList.contains("done") : null,

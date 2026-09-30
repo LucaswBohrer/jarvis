@@ -335,7 +335,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 #activity-list .row { font-family: var(--font-mono); font-size: 0.78rem; }
 #activity-list .ev-time { color: var(--faint); flex: none; }
 #activity-list .ev-type { color: var(--text); flex: 1; }
-#activity-list .ev-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+#activity-list .ev-dot { width: 8px; height: 8px; border-radius: 50%; }
 
 /* audit technical rows */
 #audit-list .row { align-items: flex-start; }
@@ -361,6 +361,60 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   Phase B — visual elevation (no new deps, no invented states)
+   Every animation below is tied to a real UI event or real
+   backend state. Decorative motion stays in the ambient layer.
+   ============================================================ */
+
+/* View transitions: 150–350ms, purposeful (orientation on navigation).
+   The animation replays only when a view becomes visible again. */
+.view:not([hidden]) { animation: viewEnter 240ms ease; }
+@keyframes viewEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Sidebar identity: active indicator bar */
+.nav-item { position: relative; }
+.nav-item[aria-current="true"]::before {
+  content: ""; position: absolute; left: 0; top: 22%; bottom: 22%;
+  width: 3px; border-radius: 3px; background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+/* Home: compact system strip — real data only (backend/session/turns/task).
+   Visible on every width; the side system panel hides below 1240px. */
+#home-status {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--faint);
+  padding: 0.5rem 0.2rem;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+#home-status .hs-item { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+#home-status .hs-item .dot { width: 7px; height: 7px; }
+#home-status .hs-val { color: var(--muted); }
+
+/* Activity: event-stream timeline (pure CSS, real events) */
+#activity-list { position: relative; }
+#activity-list::before {
+  content: ""; position: absolute; left: 5px; top: 10px; bottom: 10px;
+  width: 1px; background: var(--border);
+}
+#activity-list .row { margin-left: 1.1rem; }
+#activity-list .ev-dot {
+  position: absolute; left: -1.1rem; top: 50%; margin-top: -4px;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Tasks: non-terminal states pulse — the pulse reflects the real
+   task state, never an invented progress percentage. */
+.badge.live { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+/* NEXUS: provenance line under the last response (real metadata) */
+#nexus-prov {
+  font-family: var(--font-mono); font-size: 0.7rem; color: var(--faint);
+  padding: 0 0.2rem;
+}
 
 /* ============================================================
    Responsive (desktop-first; smaller screens stay usable)
@@ -467,6 +521,12 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
           <div id="state-line" aria-live="polite"></div>
         </div>
       </div>
+      <div id="home-status" aria-label="Estado do sistema">
+        <span class="hs-item"><span id="hs-backend-dot" class="dot" aria-hidden="true"></span><span id="hs-backend">backend…</span></span>
+        <span class="hs-item">sessão <span class="hs-val" id="hs-session">—</span></span>
+        <span class="hs-item"><span class="hs-val" id="hs-turns">0</span>&nbsp;turnos</span>
+        <span class="hs-item">tarefa <span class="hs-val" id="hs-task">—</span></span>
+      </div>
       <div id="conversation" aria-live="polite" aria-label="Conversa"></div>
       <form id="composer">
         <textarea id="input" rows="2" maxlength="2000" placeholder="Pergunte ao JARVIS&hellip;  (Enter envia, Shift+Enter quebra linha)" aria-label="Mensagem"></textarea>
@@ -548,6 +608,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       </div>
       <h3 class="mono" style="font-size:0.72rem;letter-spacing:0.24em;color:var(--faint);margin:0.4rem 0 0;">ÚLTIMA RESPOSTA</h3>
       <div id="nexus-last"><span class="note">Nenhuma consulta nesta sessão.</span></div>
+      <div id="nexus-prov" aria-label="Proveniência da resposta"></div>
     </section>
 
     <!-- SYSTEM -->
@@ -624,6 +685,17 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     if (el) { el.className = "dot" + (cls ? " " + cls : ""); }
   }
 
+  // Home system strip: renders ONLY real app state (backend -> app -> UI).
+  // Never invents values; unknown backend health shows "verificando…".
+  function updateHomeStatus() {
+    var ok = S.backendOk;
+    setDot("hs-backend-dot", ok === true ? "ok" : (ok === false ? "down" : ""));
+    setText("hs-backend", ok === true ? "online" : (ok === false ? "indisponível" : "verificando…"));
+    setText("hs-session", S.sessionId ? shortId(S.sessionId) : "—");
+    setText("hs-turns", String(S.turns));
+    setText("hs-task", S.lastTask ? (shortId(S.lastTask.id) + " · " + (S.lastTask.status || "—")) : "—");
+  }
+
   function shortId(id) {
     id = String(id || "");
     return id.length > 12 ? id.slice(0, 8) + "…" : id;
@@ -654,7 +726,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     turns: 0,
     backendOk: null,      // result of the last /health check: true | false | null
     lastTask: null,       // {id, status} of the most recent turn
-    nexus: { state: "unknown", text: null, at: null }, // unknown | up | down
+    nexus: { state: "unknown", rawStatus: null, text: null, at: null, source: null, factIds: [], observedAt: null }, // unknown | up | down; rawStatus is the real ResponseStatus from the backend
     nexusPending: false,
     reducedMotion: false,
     booted: false
@@ -1021,6 +1093,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     if (conv) { conv.textContent = ""; }
     S.turns = 0;
     setText("panel-turns", "0");
+    updateHomeStatus();
     loadHistory(id);
     go("home");
   }
@@ -1067,7 +1140,12 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         row.appendChild(main);
         var side = document.createElement("div");
         side.className = "r-side";
-        side.appendChild(badge(t.state, TASK_BADGE[t.state] || ""));
+        var tb = badge(t.state, TASK_BADGE[t.state] || "");
+        // Non-terminal states pulse: the pulse reflects the real task state.
+        if (["running", "planning", "pending", "waiting_confirmation"].indexOf(t.state) >= 0) {
+          tb.className += " live";
+        }
+        side.appendChild(tb);
         row.appendChild(side);
         var idv = document.createElement("div");
         idv.className = "r-meta mono";
@@ -1197,15 +1275,33 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   }
 
   // ---------- NEXUS view (F3.6: honest status only) ----------
+  // Honest mapping of the REAL backend ResponseStatus. Every label below
+  // corresponds to a value the backend actually returned; nothing is
+  // inferred, and "não consultado" is shown until a real query happens.
+  var NEXUS_STATE = {
+    normal:      { dot: "ok",   label: "online" },
+    warning:     { dot: "warn", label: "atenção" },
+    critical:    { dot: "down", label: "crítico" },
+    stale:       { dot: "warn", label: "dados desatualizados" },
+    empty:       { dot: "warn", label: "sem leituras" },
+    simulation:  { dot: "",     label: "simulação" },
+    unavailable: { dot: "down", label: "indisponível" },
+    error:       { dot: "down", label: "erro" }
+  };
+
   function renderNexus() {
     var dot = $("nexus-status-dot");
     var text = $("nexus-status-text");
     var last = $("nexus-last");
+    var prov = $("nexus-prov");
     var st = S.nexus.state;
-    setDot("nexus-status-dot", st === "up" ? "ok" : (st === "down" ? "down" : ""));
+    var mapped = S.nexus.rawStatus && NEXUS_STATE[S.nexus.rawStatus];
+    var dotCls = mapped ? mapped.dot : (st === "up" ? "ok" : (st === "down" ? "down" : ""));
+    var label = mapped ? mapped.label : (st === "up" ? "online" : (st === "down" ? "indisponível" : "não consultado"));
+    setDot("nexus-status-dot", dotCls);
     setDot("sys-nexus-dot", st === "up" ? "ok" : (st === "down" ? "down" : ""));
     if (text) {
-      text.textContent = st === "up" ? "online" : (st === "down" ? "indisponível" : "não consultado");
+      text.textContent = label;
     }
     setText("sys-nexus-text", st === "up" ? "online" : (st === "down" ? "indisponível" : "não consultado"));
     if (last) {
@@ -1223,6 +1319,19 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         none.className = "note";
         none.textContent = "Nenhuma consulta nesta sessão.";
         last.appendChild(none);
+      }
+    }
+    // Provenance: only real metadata from the backend payload, as one
+    // plain-text line (the page never parses strings as markup).
+    if (prov) {
+      if (S.nexus.rawStatus) {
+        prov.textContent =
+          "fonte: " + (S.nexus.source || "—") +
+          " · status: " + S.nexus.rawStatus +
+          " · evidências: " + String((S.nexus.factIds || []).length) +
+          " · observado em: " + (S.nexus.observedAt ? fmtDateTime(S.nexus.observedAt) : "—");
+      } else {
+        prov.textContent = "";
       }
     }
   }
@@ -1316,6 +1425,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function afterTurn(ok) {
     S.turns += 1;
     setText("panel-turns", String(S.turns));
+    updateHomeStatus();
     loadMemories();
   }
 
@@ -1358,10 +1468,17 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       }
       if (S.nexusPending) {
         S.nexusPending = false;
+        // Keep the real backend fields: rawStatus is the ResponseStatus enum
+        // (normal/warning/critical/stale/empty/unavailable/error/simulation),
+        // never parsed out of prose. The UI maps it honestly in renderNexus().
         S.nexus = {
           state: status === "unavailable" ? "down" : "up",
+          rawStatus: status || null,
           text: msg,
-          at: new Date().toISOString()
+          at: new Date().toISOString(),
+          source: source || null,
+          factIds: (payload && payload.fact_ids) || [],
+          observedAt: (payload && payload.observed_at) || null
         };
         renderNexus();
       }
@@ -1464,6 +1581,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       var items = (data && data.messages) || [];
       S.turns = Math.floor(items.length / 2);
       setText("panel-turns", String(S.turns));
+      updateHomeStatus();
       if (!items.length) {
         bubble("system", "Nenhuma mensagem ainda.");
       }
@@ -1517,6 +1635,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         setText("sys-core-text", ok ? "online" : "indisponível");
         setText("sys-backend", ok ? "ok" : "degradado");
         if (!ok) { setState("backend indisponível"); }
+        updateHomeStatus();
         return ok;
       });
     }).catch(function () {
@@ -1526,6 +1645,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       setDot("sys-core-dot", "down");
       setText("sys-core-text", "indisponível");
       setText("sys-backend", "indisponível");
+      updateHomeStatus();
       setState("backend indisponível");
       return false;
     });
@@ -1554,6 +1674,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       bootCheck("boot-backend", ok);
       return ensureSession().then(function () {
         bootCheck("boot-session", true);
+        updateHomeStatus();
         loadMemories();
         return loadHistory(S.sessionId);
       }, function () {
@@ -1642,6 +1763,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   Ambient.start();
   wire();
   showView(initialView());
+  renderNexus(); // honest initial state: "não consultado" until a real query
   boot();
 })();
 </script>

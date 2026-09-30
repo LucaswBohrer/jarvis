@@ -145,3 +145,86 @@ def test_composer_and_sidebar_survive_view_changes(tmp_path: Path) -> None:
     assert result["viewHistory"][-1] == "home"
     kinds = [b["kind"] for b in result["bubbles"]]
     assert "user" in kinds and "assistant" in kinds
+
+
+# -- Phase B: visual elevation, still honest ------------------------------------
+
+
+def test_home_status_strip_reflects_real_boot_state(tmp_path: Path) -> None:
+    # The Home system strip shows only real app state: backend health from
+    # the /health check, the actual session id, the real turn count.
+    result = _run_page({"storedSession": "sess-1", "history": [], "memories": []}, tmp_path)
+    hs = result["homeStatus"]
+    assert hs["backend"] == "online"
+    assert hs["session"] == "sess-1"
+    assert hs["turns"] == "0"
+    assert hs["task"] == "—"
+
+
+def test_home_status_strip_updates_after_turn(tmp_path: Path) -> None:
+    result = _run_page(
+        {
+            "storedSession": "sess-1",
+            "history": [],
+            "memories": [],
+            "postMessage": {"status": "ok", "message": "oi", "source": "fake", "task_id": "t-9"},
+            "steps": [{"set": ["input", "olá"]}, {"fire": ["composer", "submit"]}],
+        },
+        tmp_path,
+    )
+    hs = result["homeStatus"]
+    assert hs["turns"] == "1"
+    assert hs["task"] == "t-9 · ok"
+
+
+def test_nexus_warning_status_maps_honestly(tmp_path: Path) -> None:
+    # The backend ResponseStatus enum is surfaced verbatim — "warning"
+    # becomes "atenção", never upgraded to "online" nor invented.
+    result = _run_page(
+        {
+            "storedSession": "sess-1",
+            "history": [],
+            "memories": [],
+            "postMessage": {
+                "status": "warning",
+                "message": "O NEXUS está em atenção.",
+                "source": "nexus",
+                "task_id": "t-1",
+                "fact_ids": ["FACT_NEXUS_AVAILABILITY"],
+                "observed_at": "2026-09-30T15:00:00+00:00",
+            },
+            "steps": [{"fire": ["nexus-query", "click"]}],
+        },
+        tmp_path,
+    )
+    assert result["nexusStatus"] == "atenção"
+    prov = result["nexusProv"]
+    assert "status: warning" in prov
+    assert "fonte: nexus" in prov
+    assert "evidências: 1" in prov
+
+
+def test_nexus_unavailable_maps_down(tmp_path: Path) -> None:
+    result = _run_page(
+        {
+            "storedSession": "sess-1",
+            "history": [],
+            "memories": [],
+            "postMessage": {
+                "status": "unavailable",
+                "message": "Não consigo consultar o NEXUS.",
+                "source": "orchestrator",
+                "task_id": "t-2",
+            },
+            "steps": [{"fire": ["nexus-query", "click"]}],
+        },
+        tmp_path,
+    )
+    assert result["nexusStatus"] == "indisponível"
+
+
+def test_nexus_never_queried_shows_unknown(tmp_path: Path) -> None:
+    # Before any real query the NEXUS view must not claim a state.
+    result = _run_page({"storedSession": "sess-1", "history": [], "memories": []}, tmp_path)
+    assert result["nexusStatus"] == "não consultado"
+    assert result["nexusProv"] == ""
