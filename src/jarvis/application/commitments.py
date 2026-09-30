@@ -65,6 +65,7 @@ from ..domain.contracts.common import new_id
 from ..domain.errors import ErrorCategory, ErrorCode, ErrorSource, JarvisError, JarvisException
 from ..ports.clock import Clock, SystemClock
 from ..ports.commitments import CommitmentSource
+from ..security.memory_safety import scan_for_secrets
 
 log = logging.getLogger(__name__)
 
@@ -274,6 +275,68 @@ class CommitmentService:
                 )
             )
 
+    async def _scan_or_block(
+        self,
+        *,
+        title: str,
+        detail: str | None,
+        session_id: str | None,
+        task_id: str | None,
+        correlation_id: str,
+    ) -> None:
+        """Pre-persistence secret scan (F1 hardening).
+
+        Reuses the same scanner as memory writes: title and detail are
+        scanned BEFORE anything is persisted. A hit denies the write:
+        nothing is stored (and therefore nothing reaches the FTS index,
+        the conversation tail, the context snapshot or the LLM provider),
+        the audit entry carries categories only — never the secret value —
+        and it is committed in its own transaction so the block survives
+        the rollback of the persistence transaction that never happened
+        (D31 property preserved).
+
+        The scan runs before the origin gate on purpose: it is a pure,
+        side-effect-free check and the block must hold regardless of
+        origin validity.
+
+        No second defense is added in the ContextBuilder: with the block
+        at the write path there is no legitimate route for a commitment
+        secret to reach stored state, and commitments have no legacy
+        data (table introduced in migration 0003, no import path).
+        """
+        hits = scan_for_secrets(f"{title}\n{detail or ''}")
+        if not hits:
+            return
+        categories = ",".join(hit.category for hit in hits)
+        async with self._tx() as s:
+            await self._audit(
+                s,
+                event=AuditEventType.COMMITMENT_WRITE_BLOCKED,
+                correlation_id=correlation_id,
+                session_id=session_id,
+                task_id=task_id,
+                # No capability/tool_name: commitments do not go through
+                # policy.decide (D40); the origin gate below is the
+                # authorization step.
+                actor=AuditActor.LOCAL_USER,
+                outcome=AuditOutcome.DENIED,
+                request_summary=(
+                    f"commitment.create title_len={len(title)} "
+                    f"detail_len={len(detail) if detail else 0}"
+                ),
+                # Categories only — the secret VALUES never reach the audit log.
+                result_summary=f"secret blocked: categories={categories}",
+                error_code=ErrorCode.COMMITMENT_SECRET_DETECTED,
+            )
+        raise JarvisException(
+            _error(
+                ErrorCode.COMMITMENT_SECRET_DETECTED,
+                "commitment.secret_detected",
+                correlation_id,
+                category=ErrorCategory.POLICY,
+            )
+        )
+
     # -- mutations (explicit user command only) ----------------------------
 
     async def create(
@@ -288,7 +351,18 @@ class CommitmentService:
         task_id: str | None = None,
         correlation_id: str,
     ) -> Commitment:
-        """Create an open commitment. Only from an explicit user command."""
+        """Create an open commitment. Only from an explicit user command.
+
+        Secret scan runs before the origin gate and before persistence:
+        a commitment carrying a secret is never stored.
+        """
+        await self._scan_or_block(
+            title=title,
+            detail=detail,
+            session_id=session_id,
+            task_id=task_id,
+            correlation_id=correlation_id,
+        )
         self._require_origin(origin, correlation_id)
         now = self.clock.now()
         commitment = Commitment(

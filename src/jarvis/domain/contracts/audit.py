@@ -35,6 +35,7 @@ class AuditEventType(str, Enum):
     MEMORY_EXPIRED = "memory.expired"
     CONTEXT_ASSEMBLED = "context.assembled"
     COMMITMENT_CREATED = "commitment.created"
+    COMMITMENT_WRITE_BLOCKED = "commitment.write_blocked"
     COMMITMENT_FULFILLED = "commitment.fulfilled"
     COMMITMENT_EXPIRED = "commitment.expired"
     COMMITMENT_CANCELLED = "commitment.cancelled"

@@ -44,6 +44,7 @@ _STATUS_BY_CODE: dict[ErrorCode, int] = {
     ErrorCode.TASK_CANCELLED: 409,
     ErrorCode.TASK_CONFLICT: 409,
     ErrorCode.MEMORY_SECRET_DETECTED: 422,
+    ErrorCode.COMMITMENT_SECRET_DETECTED: 422,
 }
 
 
