@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JARVIS — Local Intelligence</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  main { text-align: center; padding: 2rem; }
+  h1 { font-size: 3rem; letter-spacing: 0.35em; margin: 0 0 0.25rem 1rem; }
+  .sub { color: #8b949e; margin: 0 0 2rem 0; }
+  .dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #8b949e; margin: 0 auto 1rem auto;
+  }
+  .dot.ok { background: #3fb950; }
+  .dot.down { background: #f85149; }
+  #backend-status { font-family: monospace; color: #8b949e; }
+</style>
+</head>
+<body>
+<main>
+  <h1>JARVIS</h1>
+  <p class="sub">Local Intelligence</p>
+  <div id="status-dot" class="dot" aria-hidden="true"></div>
+  <p id="backend-status">Backend: checking&hellip;</p>
+</main>
+<script>
+(async function () {
+  var el = document.getElementById("backend-status");
+  var dot = document.getElementById("status-dot");
+  function setDown() {
+    el.textContent = "Backend: Unavailable";
+    dot.classList.add("down");
+  }
+  try {
+    var res = await fetch("/health", { cache: "no-store" });
+    if (!res.ok) { setDown(); return; }
+    var data = await res.json();
+    if (data && data.status === "ok") {
+      el.textContent = "Backend: Online (v" + data.version + ")";
+      dot.classList.add("ok");
+    } else {
+      setDown();
+    }
+  } catch (e) {
+    setDown();
+  }
+})();
+</script>
+</body>
+</html>

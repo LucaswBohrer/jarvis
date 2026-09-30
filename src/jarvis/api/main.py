@@ -6,10 +6,11 @@ import time
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, Query, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import AwareDatetime, BaseModel, Field
 
 from ..application.commitments import USER_EXPLICIT_ORIGIN
@@ -34,6 +35,10 @@ from .dependencies import AppState, build_app_state, check_readiness
 log = get_logger(__name__)
 
 VERSION = "0.1.0"
+
+# F3.1 web shell: single static page served by the JARVIS process itself.
+# Same origin as the API; the page only fetches the API (client role only).
+_WEB_ROOT = Path(__file__).resolve().parent / "static"
 
 _STATUS_BY_CODE: dict[ErrorCode, int] = {
     ErrorCode.INPUT_INVALID: 422,
@@ -242,6 +247,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         response.headers["X-Correlation-Id"] = cid
         return response
+
+    # -- web shell (F3.1) -----------------------------------------------------
+    # Thin presentation layer only: serves the static page. No business
+    # logic, no policy, no keys; the page talks back only to this API.
+
+    @app.get("/", include_in_schema=False)
+    async def web_shell() -> FileResponse:
+        return FileResponse(_WEB_ROOT / "index.html", media_type="text/html")
 
     # -- operational endpoints ---------------------------------------------
 
