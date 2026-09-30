@@ -13,7 +13,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
-from pydantic import AwareDatetime, Field, field_validator
+from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from .common import EvidenceRef, FrozenModel, TolerantModel, utcnow
 
@@ -82,6 +82,16 @@ class NexusEquipmentDTO(TolerantModel):
     status: str
     enabled: bool
 
+    @field_validator("id", mode="before")
+    @classmethod
+    def _coerce_id(cls, value: object) -> object:
+        # F3.6 real-contract fix: the NEXUS serves SQLite rowids, so `id`
+        # arrives as int. Canonical contracts keep str ids; normalize at
+        # the boundary so the core never sees the external shape.
+        if isinstance(value, int) and not isinstance(value, bool):
+            return str(value)
+        return value
+
 
 class NexusEquipmentListDTO(TolerantModel):
     equipment: list[NexusEquipmentDTO]
@@ -103,12 +113,31 @@ class NexusAnomalyDTO(TolerantModel):
     message: str
     severity: str | None = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_plain_code(cls, value: object) -> object:
+        # F3.6 real-contract fix: the NEXUS diagnosis engine emits anomalies
+        # as plain codes ("HIGH_VOLTAGE", "SENSOR_STALE"). A bare string
+        # becomes the message; structured dicts keep working unchanged.
+        if isinstance(value, str):
+            return {"message": value}
+        return value
+
 
 class NexusRecommendationDTO(TolerantModel):
     id: str | None = None
     title: str | None = None
     message: str | None = None
     priority: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_plain_text(cls, value: object) -> object:
+        # F3.6 real-contract fix: recommendations also arrive as plain
+        # strings. Same normalization as anomalies.
+        if isinstance(value, str):
+            return {"message": value}
+        return value
 
 
 class NexusDiagnosisDTO(TolerantModel):
@@ -126,6 +155,19 @@ class NexusSummaryDTO(TolerantModel):
     active_events: int = 0
     open_episodes: int = 0
     readings_count: int = 0
+
+    @field_validator("equipment", mode="before")
+    @classmethod
+    def _coerce_equipment(cls, value: object) -> object:
+        # F3.6 real-contract fix: the NEXUS summary nests the full
+        # equipment object. The adapter only needs its id for the
+        # identity cross-check against the resolved equipment.
+        if isinstance(value, dict):
+            eid = value.get("id")
+            if isinstance(eid, int) and not isinstance(eid, bool):
+                return str(eid)
+            return eid
+        return value
 
 
 class NexusSimulationDTO(TolerantModel):

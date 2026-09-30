@@ -11,6 +11,7 @@ import threading
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -146,13 +147,13 @@ def policy():
 
 def make_nexus_handler(
     *,
-    equipment=None,
-    summary=None,
-    simulation=None,
-    sleep_s=0.0,
-    status_overrides=None,
-    raw_overrides=None,
-):
+    equipment: dict[str, Any] | None = None,
+    summary: dict[str, Any] | None = None,
+    simulation: dict[str, Any] | None = None,
+    sleep_s: float = 0.0,
+    status_overrides: dict[str, int] | None = None,
+    raw_overrides: dict[str, bytes] | None = None,
+) -> Any:
     """httpx.MockTransport handler serving the 3 NEXUS endpoints.
 
     status_overrides: {path_prefix: status_code}; raw_overrides: {path_prefix: bytes}.
@@ -268,7 +269,7 @@ async def new_session_id(sessions):
 class StubNexusServer:
     """Real loopback HTTP stub (for e2e over actual sockets)."""
 
-    def __init__(self, payloads):
+    def __init__(self, payloads: dict[str, Any]) -> None:
         self._payloads = payloads
         self._server = None
         self.port = 0
@@ -302,13 +303,13 @@ class StubNexusServer:
 
         return _H
 
-    def start(self):
+    def start(self) -> StubNexusServer:
         self._server = ThreadingHTTPServer(("127.0.0.1", 0), self._make_handler())
         self.port = self._server.server_address[1]
         threading.Thread(target=self._server.serve_forever, daemon=True).start()
         return self
 
-    def stop(self):
+    def stop(self) -> None:
         if self._server:
             self._server.shutdown()
 

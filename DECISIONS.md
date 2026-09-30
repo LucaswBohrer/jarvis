@@ -222,6 +222,14 @@ bind, so this does not conflict with it.
   (a past user statement, never a measured fact). Memory writes from chat
   keep flowing through the existing MEMORY_WRITE → MemoryService path with
   secret scan — the UI adds no second write path (F3.5).
+- D49. NEXUS real-contract normalization lives ONLY in the adapter-boundary
+  DTOs (`NexusEquipmentDTO.id` accepts int rowids, `NexusSummaryDTO.equipment`
+  accepts the nested equipment object, `NexusAnomalyDTO`/`NexusRecommendationDTO`
+  accept plain strings from the diagnosis engine): canonical contracts stay
+  strict and the core never sees the external shapes. Without this, a healthy
+  NEXUS was parsed as NEXUS_CONTRACT_INVALID and reported "indisponível" —
+  a false negative. The web shell needed no change: it already POSTs the
+  question and renders `payload.message` via textContent (F3.6).
 
 ## Step gates
 
