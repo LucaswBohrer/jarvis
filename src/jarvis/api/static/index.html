@@ -655,7 +655,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 </div>
 
 <canvas id="ambient" aria-hidden="true"></canvas>
-<div id="aurora" aria-hidden="true"><i></i><i></i></div>
+<div id="dotgrid" aria-hidden="true"></div>
+<div id="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="grain" aria-hidden="true"></div>
 
 <div id="app">
   <header id="topbar">
@@ -672,6 +674,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   </header>
 
   <nav id="nav" aria-label="Navegação principal">
+    <div id="nav-indicator" aria-hidden="true"></div>
     <div class="nav-label">SISTEMA</div>
     <button class="nav-item" id="nav-home" data-view="home" aria-current="true" title="Home"><span class="glyph" aria-hidden="true">◉</span>Home</button>
     <button class="nav-item" id="nav-sessions" data-view="sessions" aria-current="false" title="Sessões"><span class="glyph" aria-hidden="true">▤</span>Sessões</button>
@@ -687,11 +690,17 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   </nav>
 
   <main id="main">
-    <!-- HOME: orb + conversation (core experience) -->
+    <!-- HOME: command experience — plasma orb at the center -->
     <section class="view" id="view-home" aria-label="Home">
+      <div id="home-status" aria-label="Estado do sistema">
+        <span class="hs-item"><span id="hs-backend-dot" class="dot" aria-hidden="true"></span><span id="hs-backend">verificando…</span></span>
+        <span class="hs-item">sessão <span class="hs-val" id="hs-session">—</span></span>
+        <span class="hs-item"><span class="hs-val" id="hs-turns">0</span>&nbsp;turnos</span>
+        <span class="hs-item">tarefa <span class="hs-val" id="hs-task">—</span></span>
+      </div>
       <div id="orb-block">
         <div id="orb-wrap" data-orb="idle">
-          <canvas id="orb" width="336" height="336" aria-hidden="true"></canvas>
+          <canvas id="orb" width="560" height="560" aria-hidden="true"></canvas>
           <div id="orb-label">IDLE</div>
         </div>
         <div id="greeting">
@@ -700,19 +709,18 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
           <div id="state-line" aria-live="polite"></div>
         </div>
       </div>
-      <div id="home-status" aria-label="Estado do sistema">
-        <span class="hs-item"><span id="hs-backend-dot" class="dot" aria-hidden="true"></span><span id="hs-backend">backend…</span></span>
-        <span class="hs-item">sessão <span class="hs-val" id="hs-session">—</span></span>
-        <span class="hs-item"><span class="hs-val" id="hs-turns">0</span>&nbsp;turnos</span>
-        <span class="hs-item">tarefa <span class="hs-val" id="hs-task">—</span></span>
-      </div>
       <div id="conversation" aria-live="polite" aria-label="Conversa"></div>
-      <form id="composer">
-        <textarea id="input" rows="2" maxlength="2000" placeholder="Pergunte ao JARVIS&hellip;  (Enter envia, Shift+Enter quebra linha)" aria-label="Mensagem"></textarea>
-        <button id="voice" class="btn-ghost" type="button" disabled title="Entrada de voz — ainda não disponível">◍</button>
-        <button id="cancel" class="btn-ghost btn-danger" type="button" hidden>Cancelar</button>
-        <button id="send" class="btn" type="submit">Enviar</button>
-      </form>
+      <div id="composer-zone">
+        <form id="composer">
+          <textarea id="input" rows="1" maxlength="2000" placeholder="Pergunte ao JARVIS…" aria-label="Mensagem"></textarea>
+          <button id="send" type="submit" aria-label="Enviar mensagem" title="Enviar (Enter)">↑</button>
+        </form>
+        <div id="composer-hints" aria-hidden="true">
+          <span><kbd>Enter</kbd> enviar</span>
+          <span><kbd>Shift</kbd>+<kbd>Enter</kbd> quebra de linha</span>
+          <span><kbd>Esc</kbd> cancela</span>
+        </div>
+      </div>
     </section>
 
     <!-- SESSIONS -->
@@ -778,7 +786,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       </div>
       <div class="panel-card spot">
         <div class="nexus-hero">
-          <span id="nexus-status-dot" class="dot" aria-hidden="true"></span>
+          <span class="nexus-ring" id="nexus-ring"><span id="nexus-status-dot" class="dot" aria-hidden="true"></span></span>
           <div>
             <div class="status-line"><strong id="nexus-status-text">não consultado</strong></div>
             <div class="note" id="nexus-note">O status só muda após uma consulta real. A UI nunca inventa estado.</div>
@@ -929,34 +937,69 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   }
 
   // ---------- orb (system visualization, layer 2) ----------
-  // Canvas 2D core with breathing, orbit rings and state-driven behavior.
-  // setOrbState receives the REAL uiState-derived value; the orb never shows
+  // 100% procedural plasma in Canvas 2D — no static images, no assets.
+  // setState receives the REAL uiState-derived value; the orb never shows
   // a state the backend did not produce. LISTENING exists as an API prepared
   // for a future audioLevel, but no voice backend exists, so the orb never
   // enters it on its own (no faked audio reactivity).
+  //
+  // REAL SYSTEM STATE -> APPLICATION STATE -> VISUAL STATE -> ANIMATION:
+  // backend uiState -> energy target; pointer velocity -> temporary boost;
+  // send() -> contraction kick. The whole silhouette deforms like a liquid
+  // blob: idle breathes gently, processing churns hard.
   var Orb = (function () {
     var wrap = $("orb-wrap");
     var canvas = $("orb");
     var label = $("orb-label");
     var ctx = (canvas && typeof canvas.getContext === "function") ? canvas.getContext("2d") : null;
     var canAnimate = (typeof requestAnimationFrame === "function");
-    var W = 336, H = 336, CX = W / 2, CY = H / 2;
+    var W = 560, H = 560, CX = W / 2, CY = H / 2;
+    var R = Math.min(W, H) * 0.30;
+    var TAU = Math.PI * 2;
     var state = "idle";       // idle | active | error   (complete pulses once, back to idle)
     var audioLevel = 0;       // reserved for future voice input
     var pulseStart = -1;      // timestamp of the last completion pulse
+    var energy = 0.22, energyTarget = 0.22;
+    var boost = 0;            // pointer-velocity energy injection (decays)
+    var kick = 0;             // send-sequence contraction kick (decays fast)
     var rafId = 0;
+    var mx = CX, my = CY, hasPointer = false, lastPX = 0, lastPY = 0, lastPT = 0;
 
     var LABELS = { idle: "IDLE", active: "PROCESSANDO", complete: "CONCLUÍDO", error: "ERRO" };
+    var ENERGY_OF = { idle: 0.22, active: 0.85, error: 0.60, complete: 0.85 };
 
-    function accentFor() {
-      if (state === "error") { return { r: 248, g: 81, b: 73 }; }
-      return { r: 63, g: 224, b: 195 };
-    }
+    // 26 filaments — seeded once, deterministic per load
+    var fils = [];
+    (function seed() {
+      var s = 1234567;
+      function rnd() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
+      for (var i = 0; i < 26; i++) {
+        fils.push({
+          seed: rnd() * TAU, wob: 0.5 + rnd() * 1.4,
+          spd: 0.5 + rnd() * 1.1, dir: rnd() < 0.5 ? 1 : -1,
+          reach: 0.55 + rnd() * 0.45, hue: rnd()
+        });
+      }
+    })();
+    // 26 orbital particles
+    var dots = [];
+    (function seedDots() {
+      var s = 987654;
+      function rnd() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
+      for (var i = 0; i < 26; i++) {
+        dots.push({
+          a: rnd() * TAU, rad: 1.35 + rnd() * 0.85,
+          spd: (0.12 + rnd() * 0.30) * (rnd() < 0.5 ? 1 : -1),
+          sz: 1 + rnd() * 2.2, tw: rnd() * TAU, hue: rnd()
+        });
+      }
+    })();
 
     function setState(s) {
       if (s === "complete") { pulseStart = now(); state = "complete"; }
       else if (s === "listening") { return; } // no voice backend: never fake it
       else { state = (s === "active" || s === "error") ? s : "idle"; pulseStart = -1; }
+      energyTarget = (ENERGY_OF[state] != null) ? ENERGY_OF[state] : 0.22;
       if (wrap && wrap.setAttribute) { wrap.setAttribute("data-orb", state); }
       if (label) { label.textContent = LABELS[state] || "IDLE"; }
       drawOnce();
@@ -965,87 +1008,195 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 
     function setAudioLevel(x) { audioLevel = x; } // future voice hook; unused today
 
+    // send sequence: contraction kick — the orb "takes a breath" when a
+    // message is dispatched (real UI event, not invented state)
+    function pulse() { kick = 1; boost = Math.min(1, boost + 0.6); }
+
     function now() {
       return (typeof performance === "function" || (typeof performance === "object" && performance.now))
         ? performance.now() : Date.now();
     }
 
-    function circle(x, y, r, fill) {
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill();
+    // palette: blue -> violet plasma with a slow hue drift so the colors
+    // never look frozen; error shifts to a semantic red-violet
+    function palette(t) {
+      if (state === "error") { return { h1: 4, h2: 8, h3: 16 }; }
+      var ht = t * 0.025;
+      return {
+        h1: 212 + 18 * Math.sin(ht),
+        h2: 245 + 22 * Math.sin(ht * 1.3 + 1),
+        h3: 278 + 16 * Math.sin(ht * 0.7 + 2)
+      };
     }
 
-    function drawOnce() {
+    // deformed orb boundary: the WHOLE circle morphs like a liquid blob.
+    // low-frequency lobes (k=2) reshape the entire silhouette; amplitude
+    // scales with energy (idle: gentle breath, active: hard churn)
+    function radiusAt(a, t, e) {
+      var w = Math.sin(2 * a + t * 0.9) * 0.90
+            + Math.sin(3 * a + t * 1.15 + 0.8) * 0.55
+            + Math.sin(5 * a - t * 1.7 + 1.7) * 0.30
+            + Math.sin(8 * a + t * 2.6 + 0.6) * 0.15;
+      var amp = R * (0.02 + 0.16 * e);
+      return R * (1 + 0.010 * Math.sin(t * 0.8)) + w * amp;
+    }
+
+    function boundaryPath(t, e) {
+      var p = new Path2D();
+      var steps = 128;
+      for (var i = 0; i <= steps; i++) {
+        var a = (i / steps) * TAU;
+        var r = radiusAt(a, t, e);
+        var x = CX + Math.cos(a) * r, y = CY + Math.sin(a) * r;
+        if (i === 0) { p.moveTo(x, y); } else { p.lineTo(x, y); }
+      }
+      p.closePath();
+      return p;
+    }
+
+    function draw(tms) {
       if (!ctx) { return; }
-      draw(now());
-    }
-
-    function draw(t) {
-      var c = accentFor();
-      var speed = (state === "active") ? 3.2 : 1;
-      var breathe = Math.sin(t / 1000 * 0.9);
-      var glow = (state === "active") ? 0.85 : 0.55 + 0.1 * breathe;
-      var coreR = 58 + 6 * breathe + (state === "active" ? 6 : 0);
+      var t = tms / 1000;
+      var e = Math.min(1, energy + boost * 0.5 + kick * 0.35);
+      var pal = palette(t);
 
       ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      // send kick: brief contraction of the whole orb
+      if (kick > 0.01) {
+        var sc = 1 - 0.055 * kick;
+        ctx.translate(CX, CY); ctx.scale(sc, sc); ctx.translate(-CX, -CY);
+      }
 
-      // outer glow
-      var g = ctx.createRadialGradient(CX, CY, coreR * 0.4, CX, CY, coreR * 2.6);
-      g.addColorStop(0, "rgba(" + c.r + "," + c.g + "," + c.b + "," + (0.28 * glow + 0.12) + ")");
-      g.addColorStop(1, "rgba(" + c.r + "," + c.g + "," + c.b + ",0)");
-      ctx.fillStyle = g;
+      // 0 — halo (soft, follows energy)
+      var halo = ctx.createRadialGradient(CX, CY, R * 0.5, CX, CY, R * 2.4);
+      halo.addColorStop(0, "hsla(" + pal.h2 + ",85%,60%," + (0.10 + 0.16 * e) + ")");
+      halo.addColorStop(1, "hsla(" + pal.h2 + ",85%,60%,0)");
+      ctx.fillStyle = halo;
       ctx.fillRect(0, 0, W, H);
 
-      // orbit rings
-      ring(t, 96, 96, 0.35 * speed, 4, c, 0.5);
-      ring(t, 118, 64, -0.22 * speed, 3, c, 0.35);
+      var boundary = boundaryPath(t, e);
 
-      // core
-      var cg = ctx.createRadialGradient(CX, CY, 2, CX, CY, coreR);
-      cg.addColorStop(0, "rgba(" + c.r + "," + c.g + "," + c.b + "," + (0.5 * glow + 0.25) + ")");
-      cg.addColorStop(0.55, "rgba(" + c.r + "," + c.g + "," + c.b + "," + (0.16 * glow + 0.06) + ")");
-      cg.addColorStop(1, "rgba(" + c.r + "," + c.g + "," + c.b + ",0)");
-      circle(CX, CY, coreR, cg);
-      circle(CX, CY, 7 + 1.5 * breathe, "rgba(233,240,249," + (0.75 * glow + 0.2) + ")");
+      // 1 — dark plasma volume clipped to the deformed boundary
+      ctx.save();
+      ctx.clip(boundary);
+      var vg = ctx.createRadialGradient(CX, CY, R * 0.05, CX, CY, R * 1.15);
+      vg.addColorStop(0, "hsla(" + pal.h1 + ",70%,16%,0.95)");
+      vg.addColorStop(0.55, "hsla(" + pal.h2 + ",75%,11%,0.97)");
+      vg.addColorStop(1, "hsla(" + pal.h3 + ",80%,7%,1)");
+      ctx.fillStyle = vg;
+      ctx.fillRect(CX - R * 1.4, CY - R * 1.4, R * 2.8, R * 2.8);
 
-      // completion pulse: one expanding ring, then gone
+      // 2 — filaments: bright energy threads flowing inside
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
+      for (var i = 0; i < fils.length; i++) {
+        (function (f) {
+          var hue = pal.h1 + (pal.h3 - pal.h1) * f.hue;
+          var baseR = R * f.reach;
+          var steps = 44;
+          ctx.beginPath();
+          for (var s2 = 0; s2 <= steps; s2++) {
+            var a = f.seed + f.dir * (s2 / steps) * TAU * 1.5;
+            var rr = baseR * (0.25 + 0.75 * s2 / steps);
+            rr *= 1 + 0.16 * f.wob * Math.sin(a * 3 + t * f.spd * 2.2 + f.seed);
+            rr *= 1 + 0.10 * e * Math.sin(a * 5 - t * f.spd * 3.1);
+            var x = CX + Math.cos(a) * rr, y = CY + Math.sin(a) * rr;
+            if (s2 === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+          }
+          var alpha = 0.05 + 0.30 * e * (0.4 + 0.6 * f.hue);
+          ctx.strokeStyle = "hsla(" + hue + ",95%,68%," + alpha.toFixed(3) + ")";
+          ctx.lineWidth = 0.8 + 1.8 * e * f.hue;
+          ctx.stroke();
+        })(fils[i]);
+      }
+      ctx.restore(); // un-clip (still inside kick transform)
+
+      // 3 — core: hot blue-violet heart, compresses/stretches with energy
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      var csq = 1 + 0.10 * e * Math.sin(t * 2.3);
+      ctx.translate(CX, CY); ctx.scale(csq, 1 / csq); ctx.translate(-CX, -CY);
+      var coreR = R * (0.34 + 0.10 * e);
+      var cg = ctx.createRadialGradient(CX, CY, 1, CX, CY, coreR);
+      cg.addColorStop(0, "hsla(" + pal.h1 + ",100%,88%," + (0.55 + 0.35 * e) + ")");
+      cg.addColorStop(0.35, "hsla(" + pal.h2 + ",95%,66%," + (0.30 + 0.30 * e) + ")");
+      cg.addColorStop(1, "hsla(" + pal.h3 + ",90%,55%,0)");
+      ctx.fillStyle = cg;
+      ctx.beginPath(); ctx.arc(CX, CY, coreR, 0, TAU); ctx.fill();
+      ctx.restore();
+
+      // 4 — orbital particles
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (var d = 0; d < dots.length; d++) {
+        (function (p) {
+          var a = p.a + t * p.spd * (1 + e);
+          var rr = R * p.rad * (1 + 0.06 * Math.sin(t * 0.9 + p.tw));
+          var x = CX + Math.cos(a) * rr, y = CY + Math.sin(a) * rr * 0.62;
+          var tw = 0.25 + 0.55 * e * (0.5 + 0.5 * Math.sin(t * 3 + p.tw));
+          var hue = pal.h1 + (pal.h3 - pal.h1) * p.hue;
+          ctx.beginPath(); ctx.arc(x, y, p.sz, 0, TAU);
+          ctx.fillStyle = "hsla(" + hue + ",90%,75%," + tw.toFixed(3) + ")";
+          ctx.fill();
+        })(dots[d]);
+      }
+      ctx.restore();
+
+      // 5 — deformed rim: bloom pass + crisp edge follow the wobbling boundary
+      ctx.strokeStyle = "hsla(" + pal.h2 + ",90%,70%,0.22)";
+      ctx.lineWidth = 7; ctx.stroke(boundary);
+      ctx.strokeStyle = "hsla(" + pal.h2 + ",95%,78%,0.40)";
+      ctx.lineWidth = 1.6; ctx.stroke(boundary);
+
+      // 6 — completion pulse: one expanding ring, then gone (real event)
       if (pulseStart >= 0) {
-        var age = (t - pulseStart) / 900;
+        var age = (tms - pulseStart) / 900;
         if (age < 1) {
           ctx.beginPath();
-          ctx.arc(CX, CY, coreR + age * 70, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(" + c.r + "," + c.g + "," + c.b + "," + (0.5 * (1 - age)) + ")";
+          ctx.arc(CX, CY, R * 0.5 + age * R * 0.9, 0, TAU);
+          ctx.strokeStyle = "hsla(" + pal.h2 + ",95%,72%," + (0.5 * (1 - age)).toFixed(3) + ")";
           ctx.lineWidth = 2;
           ctx.stroke();
         } else {
           pulseStart = -1;
           if (state === "complete") {
             state = "idle";
+            energyTarget = ENERGY_OF.idle;
             if (wrap && wrap.setAttribute) { wrap.setAttribute("data-orb", "idle"); }
             if (label) { label.textContent = LABELS.idle; }
           }
         }
       }
+
+      ctx.restore(); // kick transform
     }
 
-    function ring(t, rx, ry, rotSpeed, dots, c, alpha) {
-      var rot = t / 1000 * rotSpeed;
-      ctx.strokeStyle = "rgba(" + c.r + "," + c.g + "," + c.b + "," + (alpha * 0.35) + ")";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.ellipse(CX, CY, rx, ry, rot * 0.3, 0, Math.PI * 2);
-      ctx.stroke();
-      for (var i = 0; i < dots; i++) {
-        var a = rot + (i / dots) * Math.PI * 2;
-        var x = CX + Math.cos(a) * rx;
-        var y = CY + Math.sin(a) * ry;
-        circle(x, y, 2.2, "rgba(" + c.r + "," + c.g + "," + c.b + "," + alpha + ")");
-      }
+    function drawOnce() {
+      if (!ctx) { return; }
+      energy = energyTarget; boost = 0; kick = 0;
+      draw(8000); // fixed timestamp: a calm, representative still frame
     }
 
-    function loop(t) {
+    function loop(tms) {
       if (S.reducedMotion) { rafId = 0; return; }
       if (typeof document !== "undefined" && document.hidden) { rafId = 0; return; }
-      draw(t || now());
+      // skip work while the Home view is hidden
+      if (wrap && !wrap.offsetParent) { rafId = 0; return; }
+      var t = (tms || now()) / 1000;
+      // energy easing: REAL state target + pointer boost + send kick
+      energy += (energyTarget - energy) * 0.045;
+      boost *= 0.94;
+      kick *= 0.90;
+      // pointer velocity injects temporary energy (real interaction)
+      if (hasPointer) {
+        var dtp = Math.max(1, (tms || 0) - lastPT);
+        var dx = mx - lastPX, dy = my - lastPY;
+        var speed = Math.sqrt(dx * dx + dy * dy) / dtp; // px per ms
+        if (speed > 0.15) { boost = Math.min(1, boost + Math.min(0.30, speed * 0.12)); }
+        lastPX = mx; lastPY = my; lastPT = (tms || 0);
+      }
+      draw(tms || now());
       if (canAnimate) { rafId = requestAnimationFrame(loop); }
     }
 
@@ -1055,6 +1206,18 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     }
 
     function start() {
+      if (canvas && canvas.addEventListener) {
+        canvas.addEventListener("pointermove", function (ev) {
+          var r = canvas.getBoundingClientRect();
+          if (r.width > 0) {
+            var sx = W / r.width, sy = H / r.height;
+            mx = (ev.clientX - r.left) * sx;
+            my = (ev.clientY - r.top) * sy;
+            if (!hasPointer) { lastPX = mx; lastPY = my; lastPT = now(); hasPointer = true; }
+          }
+        });
+        canvas.addEventListener("pointerleave", function () { hasPointer = false; boost *= 0.5; });
+      }
       if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
         document.addEventListener("visibilitychange", function () {
           if (!document.hidden) { restart(); }
@@ -1065,7 +1228,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       restart();
     }
 
-    return { setState: setState, setAudioLevel: setAudioLevel, drawOnce: drawOnce, start: start };
+    return { setState: setState, setAudioLevel: setAudioLevel, pulse: pulse, drawOnce: drawOnce, start: start };
   })();
 
   // ---------- ambient particle layer (layer 3) ----------
@@ -1153,6 +1316,19 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   // ---------- navigation ----------
   var VIEWS = ["home", "sessions", "tasks", "memory", "activity", "audit", "nexus", "system"];
 
+  // sliding energy indicator: glides to the active nav item (real position)
+  function moveNavIndicator() {
+    var bar = $("nav-indicator");
+    if (!bar || !bar.style) { return; }
+    if (S.reducedMotion) { bar.style.opacity = "0"; return; }
+    var btn = $("nav-" + S.view);
+    var nav = $("nav");
+    if (!btn || !nav) { bar.style.opacity = "0"; return; }
+    bar.style.opacity = "1";
+    bar.style.height = btn.offsetHeight + "px";
+    bar.style.transform = "translateY(" + (btn.offsetTop - nav.offsetTop) + "px)";
+  }
+
   function showView(name) {
     if (VIEWS.indexOf(name) < 0) { name = "home"; }
     S.view = name;
@@ -1163,6 +1339,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       var btn = $("nav-" + v);
       if (btn && btn.setAttribute) { btn.setAttribute("aria-current", v === name ? "true" : "false"); }
     }
+    moveNavIndicator();
     if (name === "sessions") { loadSessionsView(); }
     else if (name === "tasks") { loadTasksView(); }
     else if (name === "memory") { loadMemories(); }
@@ -1211,8 +1388,32 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function emptyRow(text) {
     var d = document.createElement("div");
     d.className = "empty";
-    d.textContent = text;
+    var g = document.createElement("div");
+    g.className = "e-glyph";
+    g.textContent = "◌";
+    g.setAttribute("aria-hidden", "true");
+    var t = document.createElement("div");
+    t.className = "e-title";
+    t.textContent = text;
+    d.appendChild(g);
+    d.appendChild(t);
     return d;
+  }
+
+  // skeleton rows: inserted only if a load takes >200ms (no flicker on fast loads)
+  function armSkeleton(listId, count) {
+    var list = $(listId);
+    if (!list) { return function () {}; }
+    var timer = (typeof setTimeout === "function") ? setTimeout(function () {
+      if (list && !list.firstChild) {
+        for (var i = 0; i < (count || 4); i++) {
+          var s = document.createElement("div");
+          s.className = "skel";
+          list.appendChild(s);
+        }
+      }
+    }, 200) : 0;
+    return function () { if (timer) { clearTimeout(timer); } };
   }
 
   function badge(text, cls) {
@@ -1241,7 +1442,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function loadSessionsView() {
     var list = clearList("session-list");
     if (!list) { return; }
+    var done = armSkeleton("session-list");
     getJSON("/api/v1/sessions?limit=30").then(function (data) {
+      done();
       var items = (data && data.items) || [];
       if (!items.length) { list.appendChild(emptyRow("Nenhuma sessão registrada.")); return; }
       items.forEach(function (s, i) {
@@ -1260,7 +1463,10 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         row.appendChild(main);
         var side = document.createElement("div");
         side.className = "r-side";
-        if (s.id === S.sessionId) { side.appendChild(badge("atual", "accent")); }
+        if (s.id === S.sessionId) {
+          row.className += " is-current";
+          side.appendChild(badge("atual", "accent"));
+        }
         else { side.appendChild(badge(s.status, s.status === "active" ? "ok" : "")); }
         row.appendChild(side);
         stagger(row, i);
@@ -1272,6 +1478,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         list.appendChild(row);
       });
     }).catch(function () {
+      done();
       list.appendChild(emptyRow("Não foi possível carregar as sessões."));
     });
   }
@@ -1282,6 +1489,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     setText("panel-session", shortId(id));
     var conv = $("conversation");
     if (conv) { conv.textContent = ""; }
+    var home = $("view-home");
+    if (home && home.classList) { home.classList.remove("has-thread"); }
     S.turns = 0;
     setText("panel-turns", "0");
     updateHomeStatus();
@@ -1309,7 +1518,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function loadTasksView() {
     var list = clearList("task-list");
     if (!list) { return; }
+    var done = armSkeleton("task-list");
     getJSON("/api/v1/tasks?limit=30").then(function (data) {
+      done();
       var items = (data && data.items) || [];
       if (!items.length) { list.appendChild(emptyRow("Nenhuma tarefa registrada.")); return; }
       items.forEach(function (t, i) {
@@ -1346,6 +1557,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         list.appendChild(row);
       });
     }).catch(function () {
+      done();
       list.appendChild(emptyRow("Não foi possível carregar as tarefas."));
     });
   }
@@ -1354,7 +1566,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function loadMemories() {
     var list = clearList("memory-list");
     if (!list) { return Promise.resolve("no-list"); }
+    var done = armSkeleton("memory-list");
     return getJSON("/api/v1/memory").then(function (data) {
+      done();
       var items = (data && data.items) || [];
       if (!items.length) {
         list.appendChild(emptyRow("Nenhuma memória ainda."));
@@ -1384,6 +1598,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       });
       return "loaded";
     }).catch(function () {
+      done();
       list.appendChild(emptyRow("Não foi possível carregar as memórias."));
       return "load-failed";
     });
@@ -1406,7 +1621,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function loadActivityView() {
     var list = clearList("activity-list");
     if (!list) { return; }
+    var done = armSkeleton("activity-list");
     getJSON("/api/v1/audit?limit=30").then(function (data) {
+      done();
       var items = (data && data.items) || [];
       if (!items.length) { list.appendChild(emptyRow("Nenhuma atividade registrada.")); return; }
       items.forEach(function (ev, i) {
@@ -1427,6 +1644,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         list.appendChild(row);
       });
     }).catch(function () {
+      done();
       list.appendChild(emptyRow("Não foi possível carregar a atividade."));
     });
   }
@@ -1435,7 +1653,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function loadAuditView() {
     var list = clearList("audit-list");
     if (!list) { return; }
+    var done = armSkeleton("audit-list");
     getJSON("/api/v1/audit?limit=100").then(function (data) {
+      done();
       var items = (data && data.items) || [];
       if (!items.length) { list.appendChild(emptyRow("Nenhum evento de auditoria.")); return; }
       items.forEach(function (ev, i) {
@@ -1461,6 +1681,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         list.appendChild(row);
       });
     }).catch(function () {
+      done();
       list.appendChild(emptyRow("Não foi possível carregar a auditoria."));
     });
   }
@@ -1491,6 +1712,12 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     var label = mapped ? mapped.label : (st === "up" ? "online" : (st === "down" ? "indisponível" : "não consultado"));
     setDot("nexus-status-dot", dotCls);
     setDot("sys-nexus-dot", st === "up" ? "ok" : (st === "down" ? "down" : ""));
+    var ring = $("nexus-ring");
+    if (ring && ring.classList) {
+      ring.classList.remove("up", "down");
+      if (st === "up") { ring.classList.add("up"); }
+      else if (st === "down") { ring.classList.add("down"); }
+    }
     if (text) {
       text.textContent = label;
     }
@@ -1561,6 +1788,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       var stale = document.getElementById("thread-empty");
       if (stale && stale.parentNode) { stale.parentNode.removeChild(stale); }
     }
+    // A real thread exists: settle the orb smaller and reveal the thread.
+    if (role === "user" || role === "assistant") {
+      var home = $("view-home");
+      if (home && home.classList) { home.classList.add("has-thread"); }
+    }
     var div = document.createElement("div");
     div.className = "msg " + role;
     div.textContent = text;
@@ -1583,10 +1815,27 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function setState(text) { setText("state-line", text); }
 
   function setBusy(busy) {
-    var sendBtn = $("send"), input = $("input"), cancelBtn = $("cancel");
-    if (sendBtn) { sendBtn.disabled = busy; }
+    var sendBtn = $("send"), input = $("input"), composer = $("composer");
+    // The send button morphs into a stop square while a request is in
+    // flight (real state) — one control, no mode confusion.
+    if (sendBtn) {
+      if (busy) {
+        sendBtn.classList.add("is-stop");
+        sendBtn.textContent = "■";
+        sendBtn.setAttribute("aria-label", "Cancelar envio");
+        sendBtn.setAttribute("title", "Cancelar (Esc)");
+      } else {
+        sendBtn.classList.remove("is-stop");
+        sendBtn.textContent = "↑";
+        sendBtn.setAttribute("aria-label", "Enviar mensagem");
+        sendBtn.setAttribute("title", "Enviar (Enter)");
+      }
+    }
     if (input) { input.disabled = busy; }
-    if (cancelBtn) { cancelBtn.hidden = !busy; }
+    if (composer && composer.classList) {
+      if (busy) { composer.classList.add("busy", "beam"); }
+      else { composer.classList.remove("busy", "beam"); }
+    }
   }
 
   function thinkingBubble() {
@@ -1629,6 +1878,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function send(text) {
     if (S.inFlight || !text) { return; }
     setUiState("PROCESSING");
+    Orb.pulse(); // contraction kick: the orb "takes a breath" on dispatch
     setState("processando…");
     setBusy(true);
 
@@ -1742,7 +1992,10 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 
   function submitComposer() {
     var input = $("input");
-    if (!input || S.inFlight) { return; }
+    if (!input) { return; }
+    // The send button morphs into STOP while a request is in flight:
+    // activating it (click or Enter) cancels the real request.
+    if (S.inFlight) { cancelSend(); return; }
     var text = input.value.trim();
     if (!text) { return; }
     input.value = "";
@@ -1919,15 +2172,35 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       input.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); submitComposer(); }
       });
+      // border beam while the composer has focus (real focus state)
+      input.addEventListener("focus", function () {
+        var c = $("composer");
+        if (c && c.classList && !S.inFlight && !S.reducedMotion) { c.classList.add("beam"); }
+      });
+      input.addEventListener("blur", function () {
+        var c = $("composer");
+        if (c && c.classList && !S.inFlight) { c.classList.remove("beam"); }
+      });
+    }
+    // cursor spotlight follows the pointer on Home (sets --mx/--my)
+    var home = $("view-home");
+    if (home && home.addEventListener) {
+      home.addEventListener("pointermove", function (ev) {
+        if (S.reducedMotion || !home.style) { return; }
+        var r = home.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          home.style.setProperty("--mx", ((ev.clientX - r.left) / r.width * 100).toFixed(1) + "%");
+          home.style.setProperty("--my", ((ev.clientY - r.top) / r.height * 100).toFixed(1) + "%");
+        }
+      });
     }
     if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
       document.addEventListener("keydown", function (ev) {
         if (ev.key === "Escape" && S.inFlight) { cancelSend(); }
       });
     }
-    var cancelBtn = $("cancel");
-    if (cancelBtn && cancelBtn.addEventListener) {
-      cancelBtn.addEventListener("click", cancelSend);
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      window.addEventListener("resize", function () { moveNavIndicator(); });
     }
     var rs = $("refresh-sessions");
     if (rs && rs.addEventListener) { rs.addEventListener("click", loadSessionsView); }
@@ -1955,7 +2228,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   // ---------- init ----------
   setGreeting();
   tickClock();
-  if (typeof setInterval === "function") { setInterval(tickClock, 15000); }
+  if (typeof setInterval === "function") { setInterval(tickClock, 1000); }
   setMotionReduced(osPrefersReduced());
   Orb.start();
   Ambient.start();
