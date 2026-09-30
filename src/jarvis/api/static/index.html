@@ -989,7 +989,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       function rnd() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
       for (var i = 0; i < 26; i++) {
         dots.push({
-          a: rnd() * TAU, rad: 1.35 + rnd() * 0.85,
+          a: rnd() * TAU, rad: 1.25 + rnd() * 0.35,
           spd: (0.12 + rnd() * 0.30) * (rnd() < 0.5 ? 1 : -1),
           sz: 1 + rnd() * 2.2, tw: rnd() * TAU, hue: rnd()
         });
@@ -1069,8 +1069,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         ctx.translate(CX, CY); ctx.scale(sc, sc); ctx.translate(-CX, -CY);
       }
 
-      // 0 — halo (soft, follows energy)
-      var halo = ctx.createRadialGradient(CX, CY, R * 0.5, CX, CY, R * 2.4);
+      // 0 — halo (soft, follows energy; fades fully inside the canvas)
+      var halo = ctx.createRadialGradient(CX, CY, R * 0.5, CX, CY, R * 1.6);
       halo.addColorStop(0, "hsla(" + pal.h2 + ",85%,60%," + (0.10 + 0.16 * e) + ")");
       halo.addColorStop(1, "hsla(" + pal.h2 + ",85%,60%,0)");
       ctx.fillStyle = halo;
@@ -2114,6 +2114,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     var b = $("boot");
     if (b && b.classList && !b.classList.contains("done")) {
       b.classList.add("done");
+      // remove from layout after the fade: the invisible overlay must not
+      // intercept geometry checks, pointer events or assistive tech
+      if (typeof setTimeout === "function") {
+        setTimeout(function () { b.style.display = "none"; }, 400);
+      }
     }
     S.booted = true;
   }
