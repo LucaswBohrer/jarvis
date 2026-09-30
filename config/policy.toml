@@ -1,0 +1,58 @@
+# JARVIS Phase 2 policy — static, versioned, deny-by-default.
+# Policy is deterministic code + this file. It is NEVER a prompt.
+# No wildcards allowed: capability/tool/resource/actor/require_origin must be
+# exact strings.
+#
+# Memory rules are INTERNAL: the method/url pair ("INTERNAL",
+# "internal://local-memory/") is a sentinel for in-process execution, not an
+# HTTP destination. The urlparse path of "internal://local-memory/" is "/",
+# matched by path_prefix = "/", and loopback_only is false because there is
+# no network host to check.
+
+policy_version = "2"
+
+# The single allowed NEXUS capability (unchanged from Phase 1).
+[[rule]]
+id = "nexus-status-read"
+effect = "allow"
+capability = "nexus.status.read"
+tool = "nexus.status"
+resource = "configured-nexus"
+methods = ["GET"]
+path_prefix = "/api/v1/"
+loopback_only = true
+follow_redirects = false
+max_response_bytes = 262144
+deadline_ms = 3500
+
+# Memory writes: only the local user, only with an explicit-command origin.
+# A request whose arguments carry any other (or no) origin is denied.
+[[rule]]
+id = "memory-write-local"
+effect = "allow"
+capability = "memory.write"
+tool = "memory.write"
+resource = "local-memory"
+actor = "local_user"
+require_origin = "user_explicit_command"
+methods = ["INTERNAL"]
+path_prefix = "/"
+loopback_only = false
+follow_redirects = false
+max_response_bytes = 1048576
+deadline_ms = 2000
+
+# Memory reads: only the local user. Retrieval is read-only by construction.
+[[rule]]
+id = "memory-read-local"
+effect = "allow"
+capability = "memory.read"
+tool = "memory.read"
+resource = "local-memory"
+actor = "local_user"
+methods = ["INTERNAL"]
+path_prefix = "/"
+loopback_only = false
+follow_redirects = false
+max_response_bytes = 1048576
+deadline_ms = 2000

@@ -1,0 +1,75 @@
+# JARVIS — Phase 1: Core Foundation
+# Local-first personal AI OS. Pinned dependencies (lock resolved 2026-09-30).
+
+[project]
+name = "jarvis"
+version = "0.1.0"
+description = "JARVIS Phase 1 — Core Foundation: local, single-user, read-only NEXUS integration"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.142.2",
+    "uvicorn[standard]==0.54.0",
+    "pydantic==2.13.5",
+    "pydantic-settings==2.15.0",
+    "httpx==0.28.1",
+    "SQLAlchemy==2.1.1",
+    "greenlet==3.5.6",  # required by sqlalchemy[asyncio]
+    "aiosqlite==0.22.1",
+    "alembic==1.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "ruff==0.16.9",
+    "mypy==2.3.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jarvis"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "C4", "UP", "N", "S", "A", "DTZ", "TID", "Q"]
+ignore = [
+    "S101",   # assert is fine in tests
+    "DTZ005", # datetime.now(tz=...) without fold arg is fine
+    "TID252", # codebase convention: relative imports inside the package
+    "UP042",  # codebase convention: `class X(str, Enum)` string enums
+    "N818",   # domain exception names (JarvisException) are deliberate
+    "B008",   # FastAPI's documented Depends()-in-defaults idiom
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = ["S101"]
+"migrations/**/*" = ["S", "A", "DTZ", "TID"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+show_error_codes = true
+warn_unused_ignores = true
+packages = ["jarvis"]
+mypy_path = "src"
+# Alembic migrations and the OpenAI REST adapter are excluded via per-module overrides below.
+
+[[tool.mypy.overrides]]
+module = "migrations.*"
+ignore_errors = true
+
+[tool.coverage.run]
+source = ["jarvis"]
