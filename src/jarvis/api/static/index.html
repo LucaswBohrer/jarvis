@@ -1153,6 +1153,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       // 6 — completion pulse: one expanding ring, then gone (real event)
       if (pulseStart >= 0) {
         var age = (tms - pulseStart) / 900;
+        // drawOnce() renders a fixed-timestamp still (8000ms); it must never
+        // rewind a live pulse started later — clamp instead of going negative.
+        if (age < 0) { age = 0; }
         if (age < 1) {
           ctx.beginPath();
           ctx.arc(CX, CY, R * 0.5 + age * R * 0.9, 0, TAU);
