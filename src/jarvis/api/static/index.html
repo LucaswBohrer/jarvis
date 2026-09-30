@@ -5,384 +5,1620 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>JARVIS — Local Intelligence</title>
 <style>
-  :root { color-scheme: dark; }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: #0d1117;
-    color: #e6edf3;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-  header {
-    display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    padding: 0.75rem 1.25rem;
-    border-bottom: 1px solid #21262d;
-  }
-  header h1 { font-size: 1.25rem; letter-spacing: 0.3em; margin: 0; }
-  header .sub { color: #8b949e; font-size: 0.85rem; }
-  header .backend { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-family: monospace; font-size: 0.8rem; color: #8b949e; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; background: #8b949e; }
-  .dot.ok { background: #3fb950; }
-  .dot.down { background: #f85149; }
-  main { flex: 1; display: flex; flex-direction: column; max-width: 46rem; width: 100%; margin: 0 auto; padding: 1rem 1.25rem; box-sizing: border-box; }
-  #conversation { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem 0 1rem 0; }
-  .msg { max-width: 85%; padding: 0.6rem 0.9rem; border-radius: 0.6rem; white-space: pre-wrap; word-break: break-word; font-size: 0.95rem; line-height: 1.45; }
-  .msg.user { align-self: flex-end; background: #1f6feb; color: #fff; }
-  .msg.assistant { align-self: flex-start; background: #161b22; border: 1px solid #30363d; }
-  .msg.system { align-self: center; background: transparent; color: #8b949e; font-size: 0.85rem; border: 1px dashed #30363d; }
-  .msg.error { align-self: flex-start; background: #3d1414; border: 1px solid #f85149; color: #ffa198; }
-  .meta { font-size: 0.7rem; color: #8b949e; margin-top: 0.35rem; font-family: monospace; }
-  #state-line { font-size: 0.8rem; color: #8b949e; min-height: 1.25rem; padding: 0.25rem 0; font-family: monospace; }
-  #composer { display: flex; gap: 0.5rem; padding: 0.5rem 0 0.25rem 0; }
-  #input {
-    flex: 1; resize: none; background: #161b22; color: #e6edf3;
-    border: 1px solid #30363d; border-radius: 0.5rem; padding: 0.6rem 0.8rem;
-    font: inherit; font-size: 0.95rem;
-  }
-  #input:disabled { opacity: 0.6; }
-  button {
-    background: #238636; color: #fff; border: none; border-radius: 0.5rem;
-    padding: 0 1.25rem; font: inherit; cursor: pointer;
-  }
-  button:disabled { opacity: 0.5; cursor: default; }
-  button#cancel { background: #8957e5; }
-  /* F3.5: read-only memories section. Minimal on purpose — the F3.7 UX
-     phase owns the visual redesign. No lifecycle actions here. */
-  #memories { margin-top: 1rem; border-top: 1px solid #21262d; padding-top: 0.75rem; }
-  #memories h2 { font-size: 0.95rem; margin: 0 0 0.25rem; letter-spacing: 0.1em; }
-  .mem-note { font-size: 0.75rem; color: #8b949e; margin: 0 0 0.5rem; }
-  .mem { padding: 0.4rem 0; border-bottom: 1px solid #21262d; }
-  .mem-title { font-size: 0.9rem; }
-  .mem-meta { font-size: 0.7rem; color: #8b949e; font-family: monospace; margin-top: 0.15rem; }
-  .mem-empty { color: #8b949e; font-style: italic; font-size: 0.85rem; }
+/* ============================================================
+   JARVIS F3.7 — design tokens (single source of truth)
+   ============================================================ */
+:root {
+  color-scheme: dark;
+  --bg: #060a11;
+  --bg-2: #0a101a;
+  --surface: #0d1522;
+  --surface-2: #121c2e;
+  --border: #1d2a42;
+  --border-soft: #141e31;
+  --text: #e9f0f9;
+  --muted: #8ea2bc;
+  --faint: #5b6b84;
+  --accent: #3fe0c3;
+  --accent-soft: rgba(63, 224, 195, 0.10);
+  --accent-glow: rgba(63, 224, 195, 0.35);
+  --ok: #3fb950;
+  --warn: #d29922;
+  --err: #f85149;
+  --info: #58a6ff;
+  --violet: #8957e5;
+  --radius: 10px;
+  --t-fast: 140ms;
+  --t-med: 260ms;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+.mono { font-family: var(--font-mono); }
+
+/* ============================================================
+   Ambient layer (layer 3) — never harms layers 1/2
+   ============================================================ */
+#ambient {
+  position: fixed; inset: 0; z-index: 0;
+  opacity: 0.55; pointer-events: none;
+}
+#aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+#aurora i {
+  position: absolute; border-radius: 50%;
+  filter: blur(100px); opacity: 0.14;
+}
+#aurora i:nth-child(1) {
+  width: 560px; height: 560px; background: #0d5c52;
+  top: -180px; left: -140px;
+  animation: drift1 28s ease-in-out infinite alternate;
+}
+#aurora i:nth-child(2) {
+  width: 480px; height: 480px; background: #143a6e;
+  bottom: -200px; right: -120px;
+  animation: drift2 34s ease-in-out infinite alternate;
+}
+@keyframes drift1 { from { transform: translate(0, 0); } to { transform: translate(90px, 60px); } }
+@keyframes drift2 { from { transform: translate(0, 0); } to { transform: translate(-70px, -50px); } }
+
+/* ============================================================
+   Boot overlay — short, skippable, tied to real checks
+   ============================================================ */
+#boot {
+  position: fixed; inset: 0; z-index: 50;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1.4rem; cursor: pointer;
+  transition: opacity 320ms ease;
+}
+#boot.done { opacity: 0; pointer-events: none; }
+#boot .wordmark {
+  font-size: 2rem; letter-spacing: 0.55em; text-indent: 0.55em; font-weight: 600;
+  background: linear-gradient(100deg, var(--text) 30%, var(--accent) 50%, var(--text) 70%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shimmer 2.2s linear infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -20% 0; } }
+#boot .boot-sub { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.3em; text-indent: 0.3em; }
+#boot-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; min-width: 240px; }
+#boot-list li {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--faint);
+}
+#boot-list li .bdot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--faint); flex: none;
+  transition: background var(--t-fast);
+}
+#boot-list li.ok { color: var(--muted); }
+#boot-list li.ok .bdot { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+#boot-list li.fail { color: var(--err); }
+#boot-list li.fail .bdot { background: var(--err); }
+#boot .boot-hint { color: var(--faint); font-size: 0.72rem; }
+
+/* ============================================================
+   App shell
+   ============================================================ */
+#app {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr) 300px;
+  grid-template-rows: 58px minmax(0, 1fr);
+  height: 100vh;
+}
+#topbar {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(6, 10, 17, 0.72);
+  backdrop-filter: blur(8px);
+}
+.brand { display: flex; align-items: baseline; gap: 0.7rem; }
+#wordmark { font-weight: 700; letter-spacing: 0.34em; font-size: 1.05rem; }
+.brand .sub { color: var(--faint); font-size: 0.78rem; letter-spacing: 0.12em; }
+.top-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
+#clock { color: var(--faint); font-size: 0.8rem; }
+.backend-status { display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; transition: background var(--t-fast), box-shadow var(--t-fast); }
+.dot.ok { background: var(--ok); box-shadow: 0 0 10px var(--ok); animation: pulse-dot 2.4s ease-in-out infinite; }
+.dot.down { background: var(--err); box-shadow: 0 0 10px var(--err); }
+.dot.warn { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+/* ---------- navigation ---------- */
+#nav {
+  border-right: 1px solid var(--border-soft);
+  padding: 1rem 0.75rem;
+  display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto;
+  background: rgba(10, 16, 26, 0.5);
+}
+.nav-label {
+  font-size: 0.68rem; letter-spacing: 0.22em; color: var(--faint);
+  padding: 0.4rem 0.7rem 0.3rem;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 0.7rem;
+  width: 100%; text-align: left;
+  background: transparent; border: 1px solid transparent; border-radius: 8px;
+  color: var(--muted); font: inherit; font-size: 0.9rem;
+  padding: 0.55rem 0.7rem; cursor: pointer;
+  transition: color var(--t-fast), background var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+}
+.nav-item .glyph { width: 1.2em; text-align: center; color: var(--faint); transition: color var(--t-fast); flex: none; }
+.nav-item:hover { color: var(--text); background: rgba(63, 224, 195, 0.05); }
+.nav-item:hover .glyph { color: var(--accent); }
+.nav-item[aria-current="true"] {
+  color: var(--text); background: var(--accent-soft);
+  border-color: rgba(63, 224, 195, 0.25);
+}
+.nav-item[aria-current="true"] .glyph { color: var(--accent); }
+.nav-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#nav .nav-foot { margin-top: auto; padding: 0.7rem; color: var(--faint); font-size: 0.7rem; font-family: var(--font-mono); }
+
+/* ---------- main / views ---------- */
+#main { overflow: hidden; display: flex; min-width: 0; }
+.view { flex: 1; min-width: 0; overflow-y: auto; padding: 1.4rem 1.6rem 2rem; display: flex; flex-direction: column; gap: 1rem; }
+.view-head { display: flex; align-items: baseline; gap: 0.8rem; }
+.view-head h2 { margin: 0; font-size: 1.05rem; letter-spacing: 0.18em; font-weight: 600; }
+.view-head .vh-sub { color: var(--faint); font-size: 0.8rem; }
+.view-head .spacer { flex: 1; }
+
+/* ---------- system panel ---------- */
+#syspanel {
+  border-left: 1px solid var(--border-soft);
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 0.9rem;
+  background: rgba(10, 16, 26, 0.5);
+}
+.panel-card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 0.85rem 0.95rem;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.panel-card:hover { border-color: var(--border); }
+.panel-card h3 {
+  margin: 0 0 0.6rem; font-size: 0.68rem; letter-spacing: 0.24em; color: var(--faint); font-weight: 600;
+}
+.kv { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; font-size: 0.82rem; padding: 0.22rem 0; }
+.kv .k { color: var(--faint); }
+.kv .v { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text); text-align: right; word-break: break-all; }
+.status-line { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; }
+
+/* ============================================================
+   Home: orb + conversation
+   ============================================================ */
+#orb-block { display: flex; align-items: center; gap: 1.6rem; padding: 0.4rem 0.2rem 0; }
+#orb-wrap { position: relative; width: 168px; height: 168px; flex: none; }
+#orb { width: 168px; height: 168px; display: block; }
+#orb-label {
+  position: absolute; left: 0; right: 0; bottom: -1.35rem; text-align: center;
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.28em; text-indent: 0.28em;
+  color: var(--faint);
+}
+#orb-wrap[data-orb="active"] #orb-label { color: var(--accent); }
+#orb-wrap[data-orb="error"] #orb-label { color: var(--err); }
+#greeting h2 { margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: 0.01em; }
+#greeting .g-sub { color: var(--muted); font-size: 0.92rem; margin-top: 0.25rem; }
+#state-line { font-family: var(--font-mono); font-size: 0.78rem; color: var(--faint); min-height: 1.3rem; margin-top: 0.5rem; }
+
+#conversation {
+  flex: 1; min-height: 180px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 0.8rem;
+  padding: 0.6rem 0.2rem;
+}
+.msg {
+  max-width: 82%; padding: 0.65rem 0.95rem; border-radius: 12px;
+  white-space: pre-wrap; word-break: break-word;
+  font-size: 0.94rem; line-height: 1.5;
+  animation: rise var(--t-med) ease both;
+  border: 1px solid transparent;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.msg.user { align-self: flex-end; background: linear-gradient(135deg, #134a44, #0f3d38); border-color: rgba(63, 224, 195, 0.3); }
+.msg.assistant { align-self: flex-start; background: var(--surface-2); border-color: var(--border-soft); }
+.msg.system { align-self: center; background: transparent; color: var(--muted); font-size: 0.85rem; border: 1px dashed var(--border); }
+.msg.error { align-self: flex-start; background: rgba(248, 81, 73, 0.08); border-color: rgba(248, 81, 73, 0.45); color: #ffb4ab; }
+.msg .meta { font-size: 0.68rem; color: var(--faint); margin-top: 0.4rem; font-family: var(--font-mono); }
+
+/* ---------- composer ---------- */
+#composer {
+  display: flex; gap: 0.6rem; align-items: flex-end;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.6rem;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+#composer:focus-within { border-color: rgba(63, 224, 195, 0.5); box-shadow: 0 0 0 3px rgba(63, 224, 195, 0.08); }
+#input {
+  flex: 1; resize: none; background: transparent; color: var(--text);
+  border: none; outline: none; padding: 0.55rem 0.7rem;
+  font: inherit; font-size: 0.95rem; min-height: 2.6rem; max-height: 9rem;
+}
+#input:disabled { opacity: 0.55; }
+#input::placeholder { color: var(--faint); }
+.btn {
+  background: var(--accent); color: #04231d; border: none; border-radius: 9px;
+  padding: 0.65rem 1.15rem; font: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+  transition: transform var(--t-fast), box-shadow var(--t-fast), opacity var(--t-fast);
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 18px var(--accent-glow); }
+.btn:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+.btn-ghost {
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 9px;
+  padding: 0.6rem 0.95rem; font: inherit; font-size: 0.85rem; cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+  white-space: nowrap;
+}
+.btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+.btn-ghost:disabled { opacity: 0.4; cursor: default; }
+.btn-danger { background: var(--violet); color: #fff; }
+#voice { font-size: 1.05rem; padding: 0.55rem 0.8rem; }
+button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ============================================================
+   Lists, cards, badges (sessions / tasks / memory / activity / audit)
+   ============================================================ */
+.toolbar { display: flex; gap: 0.6rem; align-items: center; }
+.list { display: flex; flex-direction: column; gap: 0.55rem; }
+.row {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.95rem;
+  display: flex; align-items: center; gap: 0.9rem;
+  transition: border-color var(--t-fast), transform var(--t-fast), background var(--t-fast);
+  animation: rise var(--t-med) ease both;
+  position: relative;
+}
+.row:hover { border-color: var(--border); }
+.row.clickable { cursor: pointer; }
+.row.clickable:hover { transform: translateX(3px); border-color: rgba(63, 224, 195, 0.35); }
+.row .r-title { font-size: 0.92rem; }
+.row .r-meta { font-size: 0.72rem; color: var(--faint); font-family: var(--font-mono); margin-top: 0.2rem; }
+.row .r-main { flex: 1; min-width: 0; }
+.row .r-side { flex: none; display: flex; align-items: center; gap: 0.5rem; }
+.badge {
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em;
+  padding: 0.22rem 0.55rem; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--muted);
+  white-space: nowrap;
+}
+.badge.ok { color: var(--ok); border-color: rgba(63, 185, 80, 0.4); background: rgba(63, 185, 80, 0.08); }
+.badge.warn { color: var(--warn); border-color: rgba(210, 153, 34, 0.4); background: rgba(210, 153, 34, 0.08); }
+.badge.err { color: var(--err); border-color: rgba(248, 81, 73, 0.4); background: rgba(248, 81, 73, 0.08); }
+.badge.info { color: var(--info); border-color: rgba(88, 166, 255, 0.4); background: rgba(88, 166, 255, 0.08); }
+.badge.accent { color: var(--accent); border-color: rgba(63, 224, 195, 0.4); background: var(--accent-soft); }
+.empty {
+  color: var(--faint); font-style: italic; font-size: 0.9rem;
+  padding: 1.6rem; text-align: center;
+  border: 1px dashed var(--border); border-radius: var(--radius);
+}
+.note { color: var(--faint); font-size: 0.8rem; }
+
+/* spotlight hover on cards (subtle, pointer-only) */
+.spot { position: relative; overflow: hidden; }
+.spot::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), rgba(63, 224, 195, 0.07), transparent 65%);
+  opacity: 0; transition: opacity var(--t-med);
+}
+.spot:hover::after { opacity: 1; }
+
+/* activity stream */
+#activity-list .row { font-family: var(--font-mono); font-size: 0.78rem; }
+#activity-list .ev-time { color: var(--faint); flex: none; }
+#activity-list .ev-type { color: var(--text); flex: 1; }
+#activity-list .ev-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* audit technical rows */
+#audit-list .row { align-items: flex-start; }
+.audit-ev { font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.65; word-break: break-word; }
+.audit-ev .ak { color: var(--faint); }
+.audit-ev .av-ok { color: var(--ok); } .audit-ev .av-err { color: var(--err); }
+.audit-ev .av-warn { color: var(--warn); } .audit-ev .av-info { color: var(--info); }
+
+/* NEXUS view */
+.nexus-hero { display: flex; align-items: center; gap: 1rem; }
+.nexus-hero .dot { width: 14px; height: 14px; }
+#nexus-last {
+  background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius);
+  padding: 0.9rem 1rem; white-space: pre-wrap; word-break: break-word; font-size: 0.9rem;
+  max-height: 320px; overflow-y: auto;
+}
+
+/* thinking indicator */
+.thinking { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 0.85rem; }
+.spinner {
+  width: 16px; height: 16px; border-radius: 50%; flex: none;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   Responsive (desktop-first; smaller screens stay usable)
+   ============================================================ */
+@media (max-width: 1240px) {
+  #app { grid-template-columns: 210px minmax(0, 1fr); }
+  #syspanel { display: none; }
+}
+@media (max-width: 760px) {
+  #app { grid-template-columns: minmax(0, 1fr); grid-template-rows: 58px auto minmax(0, 1fr); }
+  #nav { flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border-soft); padding: 0.5rem; }
+  .nav-label, #nav .nav-foot { display: none; }
+  .nav-item { width: auto; white-space: nowrap; }
+  #orb-block { flex-direction: column; align-items: flex-start; }
+  .msg { max-width: 94%; }
+}
+
+/* ============================================================
+   Reduced motion — OS setting or manual toggle
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  #aurora, #ambient { display: none; }
+  #boot .wordmark { animation: none; color: var(--text); background: none; -webkit-background-clip: unset; background-clip: unset; }
+}
+#app[data-motion="reduced"] #aurora, #app[data-motion="reduced"] #ambient { display: none; }
+#app[data-motion="reduced"] *, #app[data-motion="reduced"] *::before, #app[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;
+}
+#app[data-motion="reduced"] #boot .wordmark { animation: none; color: var(--text); background: none; -webkit-background-clip: unset; background-clip: unset; }
 </style>
 </head>
 <body>
-<header>
-  <h1>JARVIS</h1>
-  <span class="sub">Local Intelligence</span>
-  <span class="backend"><span id="status-dot" class="dot" aria-hidden="true"></span><span id="backend-status">checking&hellip;</span></span>
-</header>
-<main>
-  <div id="conversation" aria-live="polite"></div>
-  <div id="state-line"></div>
-  <form id="composer">
-    <textarea id="input" rows="2" maxlength="2000" placeholder="Escreva uma mensagem&hellip;" aria-label="Mensagem"></textarea>
-    <button id="send" type="submit">Enviar</button>
-    <button id="cancel" type="button" hidden>Cancelar</button>
-  </form>
-  <section id="memories" aria-label="Memórias">
-    <h2>MEMÓRIAS</h2>
-    <p class="mem-note">Declarações suas que guardei — não verificadas, nunca tratadas como fatos medidos.</p>
-    <div id="memory-list"></div>
-  </section>
-</main>
+<!-- Boot overlay: short, skippable, driven by real backend checks -->
+<div id="boot" role="status" aria-label="Inicializando JARVIS">
+  <div class="wordmark">JARVIS</div>
+  <div class="boot-sub">LOCAL INTELLIGENCE</div>
+  <ul id="boot-list">
+    <li id="boot-backend"><span class="bdot"></span>backend</li>
+    <li id="boot-session"><span class="bdot"></span>sessão</li>
+  </ul>
+  <div class="boot-hint">clique para pular</div>
+</div>
+
+<canvas id="ambient" aria-hidden="true"></canvas>
+<div id="aurora" aria-hidden="true"><i></i><i></i></div>
+
+<div id="app">
+  <header id="topbar">
+    <div class="brand">
+      <span id="wordmark">JARVIS</span>
+      <span class="sub">Local Intelligence</span>
+    </div>
+    <div class="top-right">
+      <span id="clock" class="mono" title="hora local"></span>
+      <span class="backend-status">
+        <span id="status-dot" class="dot" aria-hidden="true"></span><span id="backend-status">checking&hellip;</span>
+      </span>
+    </div>
+  </header>
+
+  <nav id="nav" aria-label="Navegação principal">
+    <div class="nav-label">SISTEMA</div>
+    <button class="nav-item" id="nav-home" data-view="home" aria-current="true"><span class="glyph" aria-hidden="true">◉</span>Home</button>
+    <button class="nav-item" id="nav-sessions" data-view="sessions" aria-current="false"><span class="glyph" aria-hidden="true">▤</span>Sessões</button>
+    <button class="nav-item" id="nav-tasks" data-view="tasks" aria-current="false"><span class="glyph" aria-hidden="true">◔</span>Tarefas</button>
+    <button class="nav-item" id="nav-memory" data-view="memory" aria-current="false"><span class="glyph" aria-hidden="true">❖</span>Memória</button>
+    <div class="nav-label">OBSERVABILIDADE</div>
+    <button class="nav-item" id="nav-activity" data-view="activity" aria-current="false"><span class="glyph" aria-hidden="true">≋</span>Atividade</button>
+    <button class="nav-item" id="nav-audit" data-view="audit" aria-current="false"><span class="glyph" aria-hidden="true">⎙</span>Auditoria</button>
+    <div class="nav-label">INTEGRAÇÕES</div>
+    <button class="nav-item" id="nav-nexus" data-view="nexus" aria-current="false"><span class="glyph" aria-hidden="true">⬢</span>NEXUS</button>
+    <button class="nav-item" id="nav-system" data-view="system" aria-current="false"><span class="glyph" aria-hidden="true">⚙</span>Sistema</button>
+    <div class="nav-foot mono" id="nav-foot">v0.1.0</div>
+  </nav>
+
+  <main id="main">
+    <!-- HOME: orb + conversation (core experience) -->
+    <section class="view" id="view-home" aria-label="Home">
+      <div id="orb-block">
+        <div id="orb-wrap" data-orb="idle">
+          <canvas id="orb" width="336" height="336" aria-hidden="true"></canvas>
+          <div id="orb-label">IDLE</div>
+        </div>
+        <div id="greeting">
+          <h2 id="greeting-title">JARVIS</h2>
+          <div class="g-sub" id="greeting-sub">Sistemas operacionais.</div>
+          <div id="state-line" aria-live="polite"></div>
+        </div>
+      </div>
+      <div id="conversation" aria-live="polite" aria-label="Conversa"></div>
+      <form id="composer">
+        <textarea id="input" rows="2" maxlength="2000" placeholder="Pergunte ao JARVIS&hellip;  (Enter envia, Shift+Enter quebra linha)" aria-label="Mensagem"></textarea>
+        <button id="voice" class="btn-ghost" type="button" disabled title="Entrada de voz — ainda não disponível">◍</button>
+        <button id="cancel" class="btn-ghost btn-danger" type="button" hidden>Cancelar</button>
+        <button id="send" class="btn" type="submit">Enviar</button>
+      </form>
+    </section>
+
+    <!-- SESSIONS -->
+    <section class="view" id="view-sessions" aria-label="Sessões" hidden>
+      <div class="view-head">
+        <h2>SESSÕES</h2><span class="vh-sub">conversas registradas</span>
+        <span class="spacer"></span>
+        <div class="toolbar">
+          <button class="btn-ghost" id="new-session" type="button">Nova sessão</button>
+          <button class="btn-ghost" id="refresh-sessions" type="button">Atualizar</button>
+        </div>
+      </div>
+      <div class="list" id="session-list"></div>
+    </section>
+
+    <!-- TASKS -->
+    <section class="view" id="view-tasks" aria-label="Tarefas" hidden>
+      <div class="view-head">
+        <h2>TAREFAS</h2><span class="vh-sub">execuções do orquestrador</span>
+        <span class="spacer"></span>
+        <div class="toolbar"><button class="btn-ghost" id="refresh-tasks" type="button">Atualizar</button></div>
+      </div>
+      <div class="list" id="task-list"></div>
+    </section>
+
+    <!-- MEMORY (F3.5: strictly read-only) -->
+    <section class="view" id="view-memory" aria-label="Memória" hidden>
+      <div class="view-head">
+        <h2>MEMÓRIA</h2><span class="vh-sub">declarações suas — não verificadas, nunca fatos medidos</span>
+        <span class="spacer"></span>
+        <div class="toolbar"><button class="btn-ghost" id="refresh-memory" type="button">Atualizar</button></div>
+      </div>
+      <div class="list" id="memory-list"></div>
+    </section>
+
+    <!-- ACTIVITY -->
+    <section class="view" id="view-activity" aria-label="Atividade" hidden>
+      <div class="view-head">
+        <h2>ATIVIDADE</h2><span class="vh-sub">eventos recentes do sistema</span>
+        <span class="spacer"></span>
+        <div class="toolbar"><button class="btn-ghost" id="refresh-activity" type="button">Atualizar</button></div>
+      </div>
+      <div class="list" id="activity-list"></div>
+    </section>
+
+    <!-- AUDIT -->
+    <section class="view" id="view-audit" aria-label="Auditoria" hidden>
+      <div class="view-head">
+        <h2>AUDITORIA</h2><span class="vh-sub">trilha técnica append-only</span>
+        <span class="spacer"></span>
+        <div class="toolbar"><button class="btn-ghost" id="refresh-audit" type="button">Atualizar</button></div>
+      </div>
+      <p class="note">Eventos registrados pelo backend, ordem de inserção (mais recentes primeiro). Nada é ocultado para caber no visual.</p>
+      <div class="list" id="audit-list"></div>
+    </section>
+
+    <!-- NEXUS (F3.6: honest status only) -->
+    <section class="view" id="view-nexus" aria-label="NEXUS" hidden>
+      <div class="view-head">
+        <h2>NEXUS</h2><span class="vh-sub">integração de monitoramento elétrico</span>
+        <span class="spacer"></span>
+        <div class="toolbar"><button class="btn" id="nexus-query" type="button">Consultar agora</button></div>
+      </div>
+      <div class="panel-card spot">
+        <div class="nexus-hero">
+          <span id="nexus-status-dot" class="dot" aria-hidden="true"></span>
+          <div>
+            <div class="status-line"><strong id="nexus-status-text">não consultado</strong></div>
+            <div class="note" id="nexus-note">O status só muda após uma consulta real. A UI nunca inventa estado.</div>
+          </div>
+        </div>
+      </div>
+      <h3 class="mono" style="font-size:0.72rem;letter-spacing:0.24em;color:var(--faint);margin:0.4rem 0 0;">ÚLTIMA RESPOSTA</h3>
+      <div id="nexus-last"><span class="note">Nenhuma consulta nesta sessão.</span></div>
+    </section>
+
+    <!-- SYSTEM -->
+    <section class="view" id="view-system" aria-label="Sistema" hidden>
+      <div class="view-head"><h2>SISTEMA</h2><span class="vh-sub">estado operacional</span></div>
+      <div class="panel-card spot">
+        <h3>BACKEND</h3>
+        <div class="kv"><span class="k">status</span><span class="v" id="sys-backend">—</span></div>
+        <div class="kv"><span class="k">pronto</span><span class="v" id="sys-ready">—</span></div>
+        <div class="kv"><span class="k">versão</span><span class="v" id="sys-version">—</span></div>
+        <div class="kv"><span class="k">schema do banco</span><span class="v" id="sys-schema">—</span></div>
+        <div class="kv"><span class="k">policy</span><span class="v" id="sys-policy">—</span></div>
+        <div class="kv"><span class="k">schema de memória</span><span class="v" id="sys-memschema">—</span></div>
+      </div>
+      <div class="panel-card spot">
+        <h3>SESSÃO</h3>
+        <div class="kv"><span class="k">id atual</span><span class="v" id="sys-session">—</span></div>
+      </div>
+      <div class="panel-card spot">
+        <h3>EXIBIÇÃO</h3>
+        <div class="kv"><span class="k">reduzir movimento</span><span class="v"><input type="checkbox" id="motion-toggle" aria-label="Reduzir movimento"></span></div>
+        <p class="note">Também respeita a preferência do sistema operacional (<span class="mono">prefers-reduced-motion</span>).</p>
+      </div>
+      <div class="panel-card spot">
+        <h3>ATALHOS</h3>
+        <div class="kv"><span class="k">enviar</span><span class="v">Enter</span></div>
+        <div class="kv"><span class="k">quebra de linha</span><span class="v">Shift+Enter</span></div>
+        <div class="kv"><span class="k">cancelar envio</span><span class="v">Esc</span></div>
+      </div>
+    </section>
+  </main>
+
+  <aside id="syspanel" aria-label="Painel do sistema">
+    <div class="panel-card spot">
+      <h3>NÚCLEO</h3>
+      <div class="status-line"><span id="sys-core-dot" class="dot" aria-hidden="true"></span><span id="sys-core-text">inicializando&hellip;</span></div>
+    </div>
+    <div class="panel-card spot">
+      <h3>NEXUS</h3>
+      <div class="status-line"><span id="sys-nexus-dot" class="dot" aria-hidden="true"></span><span id="sys-nexus-text">não consultado</span></div>
+    </div>
+    <div class="panel-card spot">
+      <h3>SESSÃO ATUAL</h3>
+      <div class="kv"><span class="k">id</span><span class="v" id="panel-session">—</span></div>
+      <div class="kv"><span class="k">turnos</span><span class="v" id="panel-turns">0</span></div>
+    </div>
+    <div class="panel-card spot">
+      <h3>ÚLTIMA TAREFA</h3>
+      <div class="kv"><span class="k">id</span><span class="v" id="panel-task">—</span></div>
+      <div class="kv"><span class="k">estado</span><span class="v" id="panel-task-state">—</span></div>
+    </div>
+  </aside>
+</div>
 <script>
 (function () {
   "use strict";
 
-  // Thin client only: this page renders and fetches the local JARVIS API
-  // (same origin). No policy, no tools, no NEXUS, no provider, no credentials.
+  /* Thin client only: this page renders and fetches the local JARVIS API
+     (same origin, relative URLs). No policy, no tools, no NEXUS client, no
+     provider, no credentials in this file. Animations reflect real backend
+     state only — the UI never invents system state. */
+
   var SESSION_KEY = "jarvis.session.id";
 
-  var conversation = document.getElementById("conversation");
-  var stateLine = document.getElementById("state-line");
-  var form = document.getElementById("composer");
-  var input = document.getElementById("input");
-  var sendBtn = document.getElementById("send");
-  var cancelBtn = document.getElementById("cancel");
-  var memoryList = document.getElementById("memory-list");
+  function $(id) { return document.getElementById(id); }
 
-  var uiState = "IDLE";       // IDLE | PROCESSING | COMPLETED | ERROR | CANCELLED
-  var inFlight = null;        // AbortController for the current send, if any
-  var sessionId = null;
-
-  function setState(s, label) {
-    uiState = s;
-    stateLine.textContent = label || "";
+  function setText(id, text) {
+    var el = $(id);
+    if (el) { el.textContent = text; }
   }
 
-  function bubble(kind, text, meta) {
+  function setDot(id, cls) {
+    var el = $(id);
+    if (el) { el.className = "dot" + (cls ? " " + cls : ""); }
+  }
+
+  function shortId(id) {
+    id = String(id || "");
+    return id.length > 12 ? id.slice(0, 8) + "…" : id;
+  }
+
+  function fmtTime(iso) {
+    try {
+      var d = new Date(iso);
+      var p = function (n) { return (n < 10 ? "0" : "") + n; };
+      return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+    } catch (e) { return ""; }
+  }
+
+  function fmtDateTime(iso) {
+    try {
+      var d = new Date(iso);
+      var p = function (n) { return (n < 10 ? "0" : "") + n; };
+      return p(d.getDate()) + "/" + p(d.getMonth() + 1) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+    } catch (e) { return ""; }
+  }
+
+  // ---------- application state (backend -> app -> UI -> visual) ----------
+  var S = {
+    uiState: "IDLE",      // IDLE | PROCESSING | COMPLETED | ERROR | CANCELLED
+    sessionId: null,
+    inFlight: null,       // AbortController for the current send, if any
+    view: "home",
+    turns: 0,
+    backendOk: null,      // result of the last /health check: true | false | null
+    lastTask: null,       // {id, status} of the most recent turn
+    nexus: { state: "unknown", text: null, at: null }, // unknown | up | down
+    nexusPending: false,
+    reducedMotion: false,
+    booted: false
+  };
+
+  // ---------- motion preference ----------
+  function osPrefersReduced() {
+    try {
+      return (typeof matchMedia === "function") &&
+        matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch (e) { return false; }
+  }
+
+  function setMotionReduced(on) {
+    S.reducedMotion = !!on;
+    var app = $("app");
+    if (app && app.setAttribute) { app.setAttribute("data-motion", on ? "reduced" : "full"); }
+    var t = $("motion-toggle");
+    if (t && "checked" in t) { t.checked = !!on; }
+    Orb.drawOnce();
+  }
+
+  // ---------- orb (system visualization, layer 2) ----------
+  // Canvas 2D core with breathing, orbit rings and state-driven behavior.
+  // setOrbState receives the REAL uiState-derived value; the orb never shows
+  // a state the backend did not produce. LISTENING exists as an API prepared
+  // for a future audioLevel, but no voice backend exists, so the orb never
+  // enters it on its own (no faked audio reactivity).
+  var Orb = (function () {
+    var wrap = $("orb-wrap");
+    var canvas = $("orb");
+    var label = $("orb-label");
+    var ctx = (canvas && typeof canvas.getContext === "function") ? canvas.getContext("2d") : null;
+    var canAnimate = (typeof requestAnimationFrame === "function");
+    var W = 336, H = 336, CX = W / 2, CY = H / 2;
+    var state = "idle";       // idle | active | error   (complete pulses once, back to idle)
+    var audioLevel = 0;       // reserved for future voice input
+    var pulseStart = -1;      // timestamp of the last completion pulse
+    var rafId = 0;
+
+    var LABELS = { idle: "IDLE", active: "PROCESSANDO", complete: "CONCLUÍDO", error: "ERRO" };
+
+    function accentFor() {
+      if (state === "error") { return { r: 248, g: 81, b: 73 }; }
+      return { r: 63, g: 224, b: 195 };
+    }
+
+    function setState(s) {
+      if (s === "complete") { pulseStart = now(); state = "complete"; }
+      else if (s === "listening") { return; } // no voice backend: never fake it
+      else { state = (s === "active" || s === "error") ? s : "idle"; pulseStart = -1; }
+      if (wrap && wrap.setAttribute) { wrap.setAttribute("data-orb", state); }
+      if (label) { label.textContent = LABELS[state] || "IDLE"; }
+      drawOnce();
+      restart();
+    }
+
+    function setAudioLevel(x) { audioLevel = x; } // future voice hook; unused today
+
+    function now() {
+      return (typeof performance === "function" || (typeof performance === "object" && performance.now))
+        ? performance.now() : Date.now();
+    }
+
+    function circle(x, y, r, fill) {
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill();
+    }
+
+    function drawOnce() {
+      if (!ctx) { return; }
+      draw(now());
+    }
+
+    function draw(t) {
+      var c = accentFor();
+      var speed = (state === "active") ? 3.2 : 1;
+      var breathe = Math.sin(t / 1000 * 0.9);
+      var glow = (state === "active") ? 0.85 : 0.55 + 0.1 * breathe;
+      var coreR = 58 + 6 * breathe + (state === "active" ? 6 : 0);
+
+      ctx.clearRect(0, 0, W, H);
+
+      // outer glow
+      var g = ctx.createRadialGradient(CX, CY, coreR * 0.4, CX, CY, coreR * 2.6);
+      g.addColorStop(0, "rgba(" + c.r + "," + c.g + "," + c.b + "," + (0.28 * glow + 0.12) + ")");
+      g.addColorStop(1, "rgba(" + c.r + "," + c.g + "," + c.b + ",0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      // orbit rings
+      ring(t, 96, 96, 0.35 * speed, 4, c, 0.5);
+      ring(t, 118, 64, -0.22 * speed, 3, c, 0.35);
+
+      // core
+      var cg = ctx.createRadialGradient(CX, CY, 2, CX, CY, coreR);
+      cg.addColorStop(0, "rgba(" + c.r + "," + c.g + "," + c.b + "," + (0.5 * glow + 0.25) + ")");
+      cg.addColorStop(0.55, "rgba(" + c.r + "," + c.g + "," + c.b + "," + (0.16 * glow + 0.06) + ")");
+      cg.addColorStop(1, "rgba(" + c.r + "," + c.g + "," + c.b + ",0)");
+      circle(CX, CY, coreR, cg);
+      circle(CX, CY, 7 + 1.5 * breathe, "rgba(233,240,249," + (0.75 * glow + 0.2) + ")");
+
+      // completion pulse: one expanding ring, then gone
+      if (pulseStart >= 0) {
+        var age = (t - pulseStart) / 900;
+        if (age < 1) {
+          ctx.beginPath();
+          ctx.arc(CX, CY, coreR + age * 70, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(" + c.r + "," + c.g + "," + c.b + "," + (0.5 * (1 - age)) + ")";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else {
+          pulseStart = -1;
+          if (state === "complete") {
+            state = "idle";
+            if (wrap && wrap.setAttribute) { wrap.setAttribute("data-orb", "idle"); }
+            if (label) { label.textContent = LABELS.idle; }
+          }
+        }
+      }
+    }
+
+    function ring(t, rx, ry, rotSpeed, dots, c, alpha) {
+      var rot = t / 1000 * rotSpeed;
+      ctx.strokeStyle = "rgba(" + c.r + "," + c.g + "," + c.b + "," + (alpha * 0.35) + ")";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(CX, CY, rx, ry, rot * 0.3, 0, Math.PI * 2);
+      ctx.stroke();
+      for (var i = 0; i < dots; i++) {
+        var a = rot + (i / dots) * Math.PI * 2;
+        var x = CX + Math.cos(a) * rx;
+        var y = CY + Math.sin(a) * ry;
+        circle(x, y, 2.2, "rgba(" + c.r + "," + c.g + "," + c.b + "," + alpha + ")");
+      }
+    }
+
+    function loop(t) {
+      if (S.reducedMotion) { rafId = 0; return; }
+      if (typeof document !== "undefined" && document.hidden) { rafId = 0; return; }
+      draw(t || now());
+      if (canAnimate) { rafId = requestAnimationFrame(loop); }
+    }
+
+    function restart() {
+      if (!ctx || !canAnimate || S.reducedMotion) { return; }
+      if (!rafId) { rafId = requestAnimationFrame(loop); }
+    }
+
+    function start() {
+      if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+        document.addEventListener("visibilitychange", function () {
+          if (!document.hidden) { restart(); }
+        });
+      }
+      setState("idle");
+      drawOnce();
+      restart();
+    }
+
+    return { setState: setState, setAudioLevel: setAudioLevel, drawOnce: drawOnce, start: start };
+  })();
+
+  // ---------- ambient particle layer (layer 3) ----------
+  var Ambient = (function () {
+    var canvas = $("ambient");
+    var ctx = (canvas && typeof canvas.getContext === "function") ? canvas.getContext("2d") : null;
+    var canAnimate = (typeof requestAnimationFrame === "function");
+    var parts = [], rafId = 0, Wd = 0, Ht = 0;
+
+    function resize() {
+      if (!ctx) { return; }
+      var w = (typeof window !== "undefined" && window.innerWidth) || 1200;
+      var h = (typeof window !== "undefined" && window.innerHeight) || 800;
+      var dpr = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
+      dpr = dpr > 2 ? 2 : dpr;
+      Wd = w; Ht = h;
+      canvas.width = Math.floor(w * dpr); canvas.height = Math.floor(h * dpr);
+      canvas.style.width = w + "px"; canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function seed() {
+      parts = [];
+      var n = Math.floor((Wd * Ht) / 26000);
+      if (n > 90) { n = 90; }
+      if (n < 24) { n = 24; }
+      for (var i = 0; i < n; i++) {
+        parts.push({
+          x: Math.random() * Wd, y: Math.random() * Ht,
+          r: 0.6 + Math.random() * 1.4,
+          vy: 0.06 + Math.random() * 0.22,
+          vx: (Math.random() - 0.5) * 0.08,
+          a: 0.10 + Math.random() * 0.25,
+          ph: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function draw(t) {
+      ctx.clearRect(0, 0, Wd, Ht);
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        p.y -= p.vy; p.x += p.vx;
+        if (p.y < -4) { p.y = Ht + 4; p.x = Math.random() * Wd; }
+        var tw = p.a * (0.7 + 0.3 * Math.sin(t / 1400 + p.ph));
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(120,180,200," + tw.toFixed(3) + ")";
+        ctx.fill();
+      }
+    }
+
+    function frame(t) {
+      if (S.reducedMotion) { rafId = 0; return; }
+      if (typeof document !== "undefined" && document.hidden) { rafId = 0; return; }
+      draw(t || 0);
+      if (canAnimate) { rafId = requestAnimationFrame(frame); }
+    }
+
+    function start() {
+      if (!ctx) { return; }
+      resize(); seed();
+      if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+        window.addEventListener("resize", function () { resize(); seed(); });
+      }
+      if (!S.reducedMotion && canAnimate) { rafId = requestAnimationFrame(frame); }
+      else { draw(0); }
+    }
+
+    return { start: start };
+  })();
+
+  // ---------- UI state machine (UI-level; mirrors real backend outcomes) ----------
+  // IDLE: nothing in flight. PROCESSING: a send is in flight (real).
+  // COMPLETED: last send resolved ok (pulse, then back to IDLE).
+  // ERROR: last send failed (real). CANCELLED: user aborted a send (real).
+  function setUiState(next) {
+    S.uiState = next;
+    if (next === "PROCESSING") { Orb.setState("active"); }
+    else if (next === "COMPLETED") { Orb.setState("complete"); }
+    else if (next === "ERROR") { Orb.setState("error"); }
+    else { Orb.setState("idle"); } // IDLE and CANCELLED settle back to idle
+  }
+
+  // ---------- navigation ----------
+  var VIEWS = ["home", "sessions", "tasks", "memory", "activity", "audit", "nexus", "system"];
+
+  function showView(name) {
+    if (VIEWS.indexOf(name) < 0) { name = "home"; }
+    S.view = name;
+    for (var i = 0; i < VIEWS.length; i++) {
+      var v = VIEWS[i];
+      var sec = $("view-" + v);
+      if (sec) { sec.hidden = (v !== name); }
+      var btn = $("nav-" + v);
+      if (btn && btn.setAttribute) { btn.setAttribute("aria-current", v === name ? "true" : "false"); }
+    }
+    if (name === "sessions") { loadSessionsView(); }
+    else if (name === "tasks") { loadTasksView(); }
+    else if (name === "memory") { loadMemories(); }
+    else if (name === "activity") { loadActivityView(); }
+    else if (name === "audit") { loadAuditView(); }
+    else if (name === "nexus") { renderNexus(); }
+    else if (name === "system") { loadSystemView(); }
+  }
+
+  function go(name) {
+    if (typeof location !== "undefined" && location) {
+      try { location.hash = "#/" + name; } catch (e) { /* ignore */ }
+    }
+    showView(name);
+  }
+
+  function initialView() {
+    try {
+      if (typeof location !== "undefined" && location && location.hash) {
+        var m = location.hash.match(/^#\/(\w+)/);
+        if (m && VIEWS.indexOf(m[1]) >= 0) { return m[1]; }
+      }
+    } catch (e) { /* ignore */ }
+    return "home";
+  }
+
+  // ---------- shared list helpers ----------
+  function clearList(id) {
+    var el = $(id);
+    if (el) { el.textContent = ""; }
+    return el;
+  }
+
+  function emptyRow(text) {
+    var d = document.createElement("div");
+    d.className = "empty";
+    d.textContent = text;
+    return d;
+  }
+
+  function badge(text, cls) {
+    var b = document.createElement("span");
+    b.className = "badge" + (cls ? " " + cls : "");
+    b.textContent = text;
+    return b;
+  }
+
+  function stagger(row, i, step) {
+    if (row && row.style && !S.reducedMotion) {
+      var d = i * (step || 40);
+      if (d > 600) { d = 600; }
+      row.style.animationDelay = d + "ms";
+    }
+  }
+
+  function getJSON(url) {
+    return fetch(url, { cache: "no-store" }).then(function (res) {
+      if (!res.ok) { throw new Error("fetch.failed:" + res.status); }
+      return res.json();
+    });
+  }
+
+  // ---------- sessions view ----------
+  function loadSessionsView() {
+    var list = clearList("session-list");
+    if (!list) { return; }
+    getJSON("/api/v1/sessions?limit=30").then(function (data) {
+      var items = (data && data.items) || [];
+      if (!items.length) { list.appendChild(emptyRow("Nenhuma sessão registrada.")); return; }
+      items.forEach(function (s, i) {
+        var row = document.createElement("div");
+        row.className = "row clickable spot";
+        row.setAttribute("tabindex", "0");
+        var main = document.createElement("div");
+        main.className = "r-main";
+        var title = document.createElement("div");
+        title.className = "r-title mono";
+        title.textContent = shortId(s.id);
+        var meta = document.createElement("div");
+        meta.className = "r-meta";
+        meta.textContent = s.status + " · " + fmtDateTime(s.created_at);
+        main.appendChild(title); main.appendChild(meta);
+        row.appendChild(main);
+        var side = document.createElement("div");
+        side.className = "r-side";
+        if (s.id === S.sessionId) { side.appendChild(badge("atual", "accent")); }
+        else { side.appendChild(badge(s.status, s.status === "active" ? "ok" : "")); }
+        row.appendChild(side);
+        stagger(row, i);
+        var open = function () { switchSession(s.id); };
+        row.addEventListener("click", open);
+        row.addEventListener("keydown", function (ev) {
+          if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); open(); }
+        });
+        list.appendChild(row);
+      });
+    }).catch(function () {
+      list.appendChild(emptyRow("Não foi possível carregar as sessões."));
+    });
+  }
+
+  function switchSession(id) {
+    S.sessionId = id;
+    try { sessionStorage.setItem(SESSION_KEY, id); } catch (e) { /* ignore */ }
+    setText("panel-session", shortId(id));
+    var conv = $("conversation");
+    if (conv) { conv.textContent = ""; }
+    S.turns = 0;
+    setText("panel-turns", "0");
+    loadHistory(id);
+    go("home");
+  }
+
+  function newSession() {
+    fetch("/api/v1/sessions", { method: "POST", cache: "no-store" }).then(function (res) {
+      if (!res.ok) { throw new Error("create.failed:" + res.status); }
+      return res.json();
+    }).then(function (data) {
+      if (data && data.id) { switchSession(data.id); }
+    }).catch(function () {
+      setState("Falha ao criar sessão.");
+    });
+  }
+
+  // ---------- tasks view ----------
+  var TASK_BADGE = {
+    completed: "ok", failed: "err", cancelled: "warn",
+    running: "accent", planning: "info", pending: "", waiting_confirmation: "warn"
+  };
+
+  function loadTasksView() {
+    var list = clearList("task-list");
+    if (!list) { return; }
+    getJSON("/api/v1/tasks?limit=30").then(function (data) {
+      var items = (data && data.items) || [];
+      if (!items.length) { list.appendChild(emptyRow("Nenhuma tarefa registrada.")); return; }
+      items.forEach(function (t, i) {
+        var row = document.createElement("div");
+        row.className = "row spot";
+        var main = document.createElement("div");
+        main.className = "r-main";
+        var title = document.createElement("div");
+        title.className = "r-title";
+        title.textContent = t.kind;
+        var meta = document.createElement("div");
+        meta.className = "r-meta";
+        var parts = [t.state];
+        if (t.current_step) { parts.push(t.current_step); }
+        if (t.error_code) { parts.push(t.error_code); }
+        parts.push(fmtDateTime(t.updated_at));
+        meta.textContent = parts.join(" · ");
+        main.appendChild(title); main.appendChild(meta);
+        row.appendChild(main);
+        var side = document.createElement("div");
+        side.className = "r-side";
+        side.appendChild(badge(t.state, TASK_BADGE[t.state] || ""));
+        row.appendChild(side);
+        var idv = document.createElement("div");
+        idv.className = "r-meta mono";
+        idv.textContent = shortId(t.id);
+        row.appendChild(idv);
+        stagger(row, i);
+        list.appendChild(row);
+      });
+    }).catch(function () {
+      list.appendChild(emptyRow("Não foi possível carregar as tarefas."));
+    });
+  }
+
+  // ---------- memory view (F3.5: strictly read-only) ----------
+  function loadMemories() {
+    var list = clearList("memory-list");
+    if (!list) { return Promise.resolve("no-list"); }
+    return getJSON("/api/v1/memory").then(function (data) {
+      var items = (data && data.items) || [];
+      if (!items.length) {
+        list.appendChild(emptyRow("Nenhuma memória ainda."));
+        return "loaded-empty";
+      }
+      items.forEach(function (m, i) {
+        var row = document.createElement("div");
+        row.className = "row spot";
+        var main = document.createElement("div");
+        main.className = "r-main";
+        var title = document.createElement("div");
+        title.className = "r-title";
+        title.textContent = m.title || m.content || "";
+        var meta = document.createElement("div");
+        meta.className = "r-meta";
+        var parts = [m.kind || "", "não verificada"];
+        if (m.created_at) { parts.push(fmtDateTime(m.created_at)); }
+        meta.textContent = parts.filter(Boolean).join(" · ");
+        main.appendChild(title); main.appendChild(meta);
+        row.appendChild(main);
+        var side = document.createElement("div");
+        side.className = "r-side";
+        side.appendChild(badge(m.kind || "memory", "info"));
+        row.appendChild(side);
+        stagger(row, i);
+        list.appendChild(row);
+      });
+      return "loaded";
+    }).catch(function () {
+      list.appendChild(emptyRow("Não foi possível carregar as memórias."));
+      return "load-failed";
+    });
+  }
+
+  // ---------- activity view ----------
+  // Real AuditOutcome values: success | failure | denied | cancelled.
+  function outcomeColor(outcome) {
+    if (outcome === "success") { return "var(--ok)"; }
+    if (outcome === "denied" || outcome === "failure") { return "var(--err)"; }
+    return "var(--warn)";
+  }
+
+  function outcomeBadge(outcome) {
+    if (outcome === "success") { return "ok"; }
+    if (outcome === "denied" || outcome === "failure") { return "err"; }
+    return "warn";
+  }
+
+  function loadActivityView() {
+    var list = clearList("activity-list");
+    if (!list) { return; }
+    getJSON("/api/v1/audit?limit=30").then(function (data) {
+      var items = (data && data.items) || [];
+      if (!items.length) { list.appendChild(emptyRow("Nenhuma atividade registrada.")); return; }
+      items.forEach(function (ev, i) {
+        var row = document.createElement("div");
+        row.className = "row";
+        var dot = document.createElement("span");
+        dot.className = "ev-dot";
+        if (dot.style) { dot.style.background = outcomeColor(ev.outcome); }
+        var time = document.createElement("span");
+        time.className = "ev-time";
+        time.textContent = fmtTime(ev.occurred_at);
+        var type = document.createElement("span");
+        type.className = "ev-type";
+        type.textContent = ev.event_type || "";
+        row.appendChild(dot); row.appendChild(time); row.appendChild(type);
+        row.appendChild(badge(ev.outcome || "", outcomeBadge(ev.outcome)));
+        stagger(row, i, 25);
+        list.appendChild(row);
+      });
+    }).catch(function () {
+      list.appendChild(emptyRow("Não foi possível carregar a atividade."));
+    });
+  }
+
+  // ---------- audit view ----------
+  function loadAuditView() {
+    var list = clearList("audit-list");
+    if (!list) { return; }
+    getJSON("/api/v1/audit?limit=100").then(function (data) {
+      var items = (data && data.items) || [];
+      if (!items.length) { list.appendChild(emptyRow("Nenhum evento de auditoria.")); return; }
+      items.forEach(function (ev, i) {
+        var row = document.createElement("div");
+        row.className = "row";
+        var side = document.createElement("div");
+        side.className = "r-side";
+        side.appendChild(badge(ev.outcome || "—", outcomeBadge(ev.outcome)));
+        var detail = document.createElement("div");
+        detail.className = "audit-ev r-main";
+        var lines = [
+          fmtTime(ev.occurred_at) + "  " + (ev.event_type || ""),
+          "actor=" + (ev.actor || "") + "  capability=" + (ev.capability || "—") +
+            "  tool=" + (ev.tool_name || "—") + "  decision=" + (ev.policy_decision || "—"),
+          "task=" + shortId(ev.task_id) + "  session=" + shortId(ev.session_id) +
+            "  corr=" + shortId(ev.correlation_id) + "  duration=" + (ev.duration_ms == null ? "—" : ev.duration_ms + "ms")
+        ];
+        var sum = ev.input_summary || ev.output_summary;
+        if (sum) { lines.push(String(sum)); }
+        detail.textContent = lines.join("\n");
+        row.appendChild(side); row.appendChild(detail);
+        stagger(row, i, 15);
+        list.appendChild(row);
+      });
+    }).catch(function () {
+      list.appendChild(emptyRow("Não foi possível carregar a auditoria."));
+    });
+  }
+
+  // ---------- NEXUS view (F3.6: honest status only) ----------
+  function renderNexus() {
+    var dot = $("nexus-status-dot");
+    var text = $("nexus-status-text");
+    var last = $("nexus-last");
+    var st = S.nexus.state;
+    setDot("nexus-status-dot", st === "up" ? "ok" : (st === "down" ? "down" : ""));
+    setDot("sys-nexus-dot", st === "up" ? "ok" : (st === "down" ? "down" : ""));
+    if (text) {
+      text.textContent = st === "up" ? "online" : (st === "down" ? "indisponível" : "não consultado");
+    }
+    setText("sys-nexus-text", st === "up" ? "online" : (st === "down" ? "indisponível" : "não consultado"));
+    if (last) {
+      if (S.nexus.text) {
+        last.textContent = "";
+        var when = document.createElement("div");
+        when.className = "r-meta mono";
+        when.textContent = "consultado em " + fmtTime(S.nexus.at);
+        var body = document.createElement("div");
+        body.textContent = S.nexus.text;
+        last.appendChild(when); last.appendChild(body);
+      } else {
+        last.textContent = "";
+        var none = document.createElement("span");
+        none.className = "note";
+        none.textContent = "Nenhuma consulta nesta sessão.";
+        last.appendChild(none);
+      }
+    }
+  }
+
+  function queryNexus() {
+    S.nexusPending = true;
+    go("home");
+    send("Como está o NEXUS?");
+  }
+
+  // ---------- system view ----------
+  function loadSystemView() {
+    getJSON("/health").then(function (d) {
+      setText("sys-backend", d && d.status === "ok" ? "ok" : "degradado");
+    }).catch(function () { setText("sys-backend", "indisponível"); });
+    getJSON("/ready").then(function (d) {
+      setText("sys-ready", d && d.ready ? "sim (" + (d.reason || "ok") + ")" : "não (" + (d && d.reason || "?") + ")");
+    }).catch(function () { setText("sys-ready", "indisponível"); });
+    getJSON("/version").then(function (d) {
+      setText("sys-version", (d && (d.version || d.service)) || "—");
+      setText("sys-schema", (d && d.database_schema) || "—");
+      setText("sys-policy", (d && d.policy_version) || "—");
+      setText("sys-memschema", (d && d.memory_schema) || "—");
+      setText("nav-foot", "v" + ((d && d.version) || "0.1.0"));
+    }).catch(function () { setText("sys-version", "indisponível"); });
+    setText("sys-session", S.sessionId ? shortId(S.sessionId) : "—");
+  }
+
+  // ---------- conversation (home) ----------
+  function bubble(role, text, meta) {
+    var conv = $("conversation");
+    if (!conv) { return null; }
     var div = document.createElement("div");
-    div.className = "msg " + kind;
-    var body = document.createElement("div");
-    body.textContent = text;   // textContent only: API text is never parsed as HTML
-    div.appendChild(body);
+    div.className = "msg " + role;
+    div.textContent = text;
     if (meta) {
       var m = document.createElement("div");
       m.className = "meta";
       m.textContent = meta;
       div.appendChild(m);
     }
-    conversation.appendChild(div);
-    conversation.scrollTop = conversation.scrollHeight;
+    conv.appendChild(div);
+    if (typeof conv.scrollTo === "function") {
+      try { conv.scrollTo({ top: conv.scrollHeight, behavior: S.reducedMotion ? "auto" : "smooth" }); }
+      catch (e) { conv.scrollTop = conv.scrollHeight; }
+    } else {
+      conv.scrollTop = conv.scrollHeight;
+    }
+    return div;
   }
+
+  function setState(text) { setText("state-line", text); }
 
   function setBusy(busy) {
-    input.disabled = busy;
-    sendBtn.disabled = busy;
-    cancelBtn.hidden = !busy;
+    var sendBtn = $("send"), input = $("input"), cancelBtn = $("cancel");
+    if (sendBtn) { sendBtn.disabled = busy; }
+    if (input) { input.disabled = busy; }
+    if (cancelBtn) { cancelBtn.hidden = !busy; }
   }
 
-  // -- backend health (F3.1 behavior, kept) --------------------------------
-  (function checkHealth() {
-    var el = document.getElementById("backend-status");
-    var dot = document.getElementById("status-dot");
-    function down() {
-      el.textContent = "unavailable";
-      dot.classList.add("down");
-    }
-    fetch("/health", { cache: "no-store" })
-      .then(function (res) {
-        if (!res.ok) { down(); return; }
-        return res.json();
-      })
-      .then(function (data) {
-        if (data && data.status === "ok") {
-          el.textContent = "online (v" + data.version + ")";
-          dot.classList.add("ok");
-        } else {
-          down();
-        }
-      })
-      .catch(down);
-  })();
-
-  // -- sessions ------------------------------------------------------------
-  function createSession() {
-    return fetch("/api/v1/sessions", { method: "POST", cache: "no-store" })
-      .then(function (res) {
-        if (!res.ok) { throw new Error("session.create.failed:" + res.status); }
-        return res.json();
-      })
-      .then(function (data) {
-        if (!data || !data.id) { throw new Error("session.create.bad_response"); }
-        sessionId = data.id;
-        try { sessionStorage.setItem(SESSION_KEY, sessionId); } catch (e) { /* ignore */ }
-        return sessionId;
-      });
+  function thinkingBubble() {
+    var conv = $("conversation");
+    if (!conv) { return null; }
+    var div = document.createElement("div");
+    div.className = "msg assistant";
+    var t = document.createElement("span");
+    t.className = "thinking";
+    var sp = document.createElement("span");
+    sp.className = "spinner";
+    var label = document.createElement("span");
+    label.textContent = "processando…";
+    t.appendChild(sp); t.appendChild(label);
+    div.appendChild(t);
+    conv.appendChild(div);
+    return div;
   }
 
-  function ensureSession() {
-    if (sessionId) { return Promise.resolve(sessionId); }
-    try { sessionId = sessionStorage.getItem(SESSION_KEY) || null; } catch (e) { sessionId = null; }
-    if (sessionId) { return Promise.resolve(sessionId); }
-    return createSession();
-  }
-
-  // -- conversation history (F3.3: D1) ---------------------------------------
-  // Read-only restore after reload. The backend owns the order; the page only
-  // renders the received sequence as plain text (no HTML parsing).
-  function renderHistoryMessage(m) {
-    var kind = (m.role === "user" || m.role === "assistant" || m.role === "system")
-      ? m.role
-      : "assistant";
-    bubble(kind, m.content || "");
-  }
-
-  function loadHistory(sid) {
-    return fetch("/api/v1/sessions/" + encodeURIComponent(sid) + "/messages", { cache: "no-store" })
-      .then(function (res) {
-        if (res.status === 404) { return { notFound: true }; }
-        if (!res.ok) { throw new Error("history.failed:" + res.status); }
-        return res.json();
-      })
-      .then(function (payload) {
-        if (payload && payload.notFound) { return "not-found"; }
-        var items = (payload && Array.isArray(payload.messages)) ? payload.messages : [];
-        if (items.length === 0) {
-          bubble("system", "Nenhuma mensagem ainda.");
-        } else {
-          items.forEach(renderHistoryMessage);
-        }
-        return "ok";
-      });
-  }
-
-  // -- memories (F3.5) -------------------------------------------------------
-  // Read-only display of stored memories via GET /api/v1/memory. The page
-  // never mutates memory lifecycle: no confirm/revoke/supersede/delete here
-  // — those stay in the backend flow. Memories are labeled "não verificada"
-  // to match MemoryCtx.verified=False (a past user statement, never a
-  // measured fact). All rendering via textContent, like the chat.
-  function memoryLabel(item) {
-    var kind = item.kind || "?";
-    var status = item.status || "?";
-    return kind + " · " + status + " · não verificada";
-  }
-
-  function renderMemory(item) {
-    var wrap = document.createElement("div");
-    wrap.className = "mem";
-    var title = document.createElement("div");
-    title.className = "mem-title";
-    title.textContent = item.title || "";
-    var meta = document.createElement("div");
-    meta.className = "mem-meta";
-    meta.textContent = memoryLabel(item);
-    wrap.appendChild(title);
-    wrap.appendChild(meta);
-    memoryList.appendChild(wrap);
-  }
-
-  function loadMemories() {
-    if (!memoryList) { return Promise.resolve("no-list"); }
-    return fetch("/api/v1/memory?limit=20", { cache: "no-store" })
-      .then(function (res) {
-        if (!res.ok) { throw new Error("memories.failed:" + res.status); }
-        return res.json();
-      })
-      .then(function (payload) {
-        var items = (payload && Array.isArray(payload.items)) ? payload.items : [];
-        memoryList.textContent = "";
-        if (items.length === 0) {
-          var empty = document.createElement("div");
-          empty.className = "mem-empty";
-          empty.textContent = "Nenhuma memória ainda.";
-          memoryList.appendChild(empty);
-        } else {
-          items.forEach(renderMemory);
-        }
-        return "ok";
-      })
-      .catch(function () {
-        // Memory list failure is non-fatal: the chat stays usable.
-        memoryList.textContent = "";
-        var err = document.createElement("div");
-        err.className = "mem-empty";
-        err.textContent = "Não foi possível carregar as memórias.";
-        memoryList.appendChild(err);
-        return "failed";
-      });
-  }
-
-  // -- error rendering: only what the API actually returned ----------------
   function apiErrorText(status, payload) {
-    var key = (payload && payload.error && payload.error.message_key) || "unknown";
-    if (status === 0) { return "JARVIS indisponível."; }
-    return "Erro (" + status + "): " + key;
+    // Real API error envelope: {error: {message_key, message}}.
+    // FastAPI-style {detail: ...} is accepted as a fallback.
+    var err = payload && (payload.error || payload.detail);
+    if (typeof err === "string") { return err; }
+    if (err && err.message_key) {
+      return err.message ? err.message + " [" + err.message_key + "]" : String(err.message_key);
+    }
+    if (err && err.message) { return err.message; }
+    if (payload && payload.message) { return payload.message; }
+    return "Falha na API (" + status + ").";
   }
 
-  // -- message send --------------------------------------------------------
-  function postMessage(sid, content, signal) {
-    return fetch("/api/v1/sessions/" + encodeURIComponent(sid) + "/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: content }),
-      signal: signal,
-      cache: "no-store"
+  function afterTurn(ok) {
+    S.turns += 1;
+    setText("panel-turns", String(S.turns));
+    loadMemories();
+  }
+
+  function send(text) {
+    if (S.inFlight || !text) { return; }
+    setUiState("PROCESSING");
+    setState("processando…");
+    setBusy(true);
+
+    var sid = S.sessionId;
+    if (!sid) {
+      bubble("error", "Sessão ainda não pronta. Aguarde o boot.");
+      setBusy(false);
+      setUiState("IDLE");
+      return;
+    }
+
+    var think = thinkingBubble();
+    var controller = (typeof AbortController === "function") ? new AbortController() : null;
+    S.inFlight = controller;
+
+    var url = "/api/v1/sessions/" + encodeURIComponent(sid) + "/messages";
+    var doPost = function (sessionId) {
+      var opts = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: text }) };
+      if (controller) { opts.signal = controller.signal; }
+      return fetch(url, opts);
+    };
+
+    var finishOk = function (payload) {
+      if (think && think.remove) { think.remove(); }
+      var msg = (payload && payload.message) || "(resposta vazia)";
+      var source = (payload && payload.source) || "";
+      var status = (payload && payload.status) || "";
+      var when = fmtTime(new Date().toISOString());
+      bubble("assistant", msg, when + (source ? " · " + source : "") + (status ? " · " + status : ""));
+      if (payload && payload.task_id) {
+        S.lastTask = { id: payload.task_id, status: status };
+        setText("panel-task", shortId(payload.task_id));
+        setText("panel-task-state", status || "—");
+      }
+      if (S.nexusPending) {
+        S.nexusPending = false;
+        S.nexus = {
+          state: status === "unavailable" ? "down" : "up",
+          text: msg,
+          at: new Date().toISOString()
+        };
+        renderNexus();
+      }
+      setState("ok");
+      setBusy(false);
+      S.inFlight = null;
+      setUiState("COMPLETED");
+      afterTurn(true);
+      if (typeof setTimeout === "function" && !S.reducedMotion) {
+        setTimeout(function () { if (S.uiState === "COMPLETED") { setUiState("IDLE"); } }, 1400);
+      } else { setUiState("IDLE"); }
+    };
+
+    var finishErr = function (errText, cancelled) {
+      if (think && think.remove) { think.remove(); }
+      if (cancelled) {
+        bubble("system", "Envio cancelado.");
+        setState("cancelado");
+        setUiState("CANCELLED");
+      } else {
+        bubble("error", errText);
+        setState("erro: " + errText);
+        setUiState("ERROR");
+      }
+      setBusy(false);
+      S.inFlight = null;
+      afterTurn(false);
+      if (typeof setTimeout === "function" && !S.reducedMotion) {
+        setTimeout(function () { if (S.uiState === "ERROR" || S.uiState === "CANCELLED") { setUiState("IDLE"); } }, 2200);
+      } else { setUiState("IDLE"); }
+    };
+
+    var attempt = function (sessionId, retried) {
+      doPost(sessionId).then(function (res) {
+        if (res.status === 404 && !retried) {
+          // session vanished server-side: create a fresh one and retry once
+          return createSession().then(function (s) {
+            if (s && s.id) {
+              S.sessionId = s.id;
+              try { sessionStorage.setItem(SESSION_KEY, s.id); } catch (e) { /* ignore */ }
+              setText("panel-session", shortId(s.id));
+              return attempt(s.id, true);
+            }
+            throw new Error("session.recreate.failed");
+          });
+        }
+        if (!res.ok) {
+          return res.json().catch(function () { return null; }).then(function (payload) {
+            finishErr(apiErrorText(res.status, payload), false);
+          });
+        }
+        return res.json().then(finishOk, function () {
+          finishErr("Resposta inválida do backend.", false);
+        });
+      }).catch(function (err) {
+        var cancelled = controller && controller.signal && controller.signal.aborted;
+        finishErr(cancelled ? "" : "JARVIS indisponível.", !!cancelled);
+      });
+    };
+
+    bubble("user", text, fmtTime(new Date().toISOString()));
+    attempt(sid, false);
+  }
+
+  function submitComposer() {
+    var input = $("input");
+    if (!input || S.inFlight) { return; }
+    var text = input.value.trim();
+    if (!text) { return; }
+    input.value = "";
+    send(text);
+  }
+
+  function cancelSend() {
+    var c = S.inFlight;
+    S.inFlight = null;
+    if (c && typeof c.abort === "function") { c.abort(); }
+  }
+
+  function loadHistory(sessionId) {
+    var url = "/api/v1/sessions/" + encodeURIComponent(sessionId) + "/messages";
+    return fetch(url, { cache: "no-store" }).then(function (res) {
+      if (res.status === 404) {
+        // The stored session vanished server-side: create a fresh one, once.
+        // No second history fetch — the recovery must not loop.
+        return createSession().then(function (s) {
+          if (s && s.id) {
+            S.sessionId = s.id;
+            try { sessionStorage.setItem(SESSION_KEY, s.id); } catch (e) { /* ignore */ }
+            setText("panel-session", shortId(s.id));
+          }
+          setState("pronta");
+          return null;
+        });
+      }
+      if (!res.ok) { throw new Error("history.failed:" + res.status); }
+      return res.json();
+    }).then(function (data) {
+      if (!data) { return; }
+      var items = (data && data.messages) || [];
+      S.turns = Math.floor(items.length / 2);
+      setText("panel-turns", String(S.turns));
+      if (!items.length) {
+        bubble("system", "Nenhuma mensagem ainda.");
+      }
+      items.forEach(function (m) {
+        if (m.role === "user") { bubble("user", m.content || "", fmtTime(m.created_at)); }
+        else if (m.role === "assistant") { bubble("assistant", m.content || "", fmtTime(m.created_at)); }
+      });
+      if (S.backendOk !== false) { setState("pronta"); }
+    }).catch(function () {
+      // History is best-effort; the session itself is still usable — unless
+      // the health check already told us the backend is down, in which case
+      // we keep that honest signal instead of claiming readiness.
+      if (S.backendOk !== false) { setState("pronta"); }
     });
   }
 
-  function send(content) {
-    setState("PROCESSING", "processando…");
-    setBusy(true);
-    bubble("user", content);
-
-    var controller = new AbortController();
-    inFlight = controller;
-
-    function attempt(retryAllowed) {
-      return ensureSession()
-        .then(function (sid) { return postMessage(sid, content, controller.signal); })
-        .then(function (res) {
-          if (res.status === 404 && retryAllowed) {
-            // Stored session is gone (e.g. DB reset): create a fresh one and retry once.
-            return res.json().catch(function () { return null; }).then(function (payload) {
-              var gone = payload && payload.error && payload.error.message_key === "session.not_found";
-              if (!gone) { return { res: res, payload: payload }; }
-              sessionId = null;
-              try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
-              return createSession().then(function (sid) {
-                return postMessage(sid, content, controller.signal).then(function (r2) {
-                  return r2.json().catch(function () { return null; }).then(function (p2) {
-                    return { res: r2, payload: p2 };
-                  });
-                });
-              });
-            });
-          }
-          return res.json().catch(function () { return null; }).then(function (payload) {
-            return { res: res, payload: payload };
-          });
-        })
-        .then(function (out) {
-          var res = out.res, payload = out.payload;
-          if (!res.ok) {
-            setState("ERROR", "erro");
-            bubble("error", apiErrorText(res.status, payload));
-            return;
-          }
-          // AssistantResponse: { task_id, status, message, source, ... }
-          var meta = "status: " + (payload.status || "?") + " · fonte: " + (payload.source || "?");
-          bubble("assistant", payload.message || "", meta);
-          setState("COMPLETED", "resposta recebida");
-          loadMemories();  // F3.5: a memory write ("lembre-se de X") shows up here.
-        })
-        .catch(function (err) {
-          if (err && err.name === "AbortError") {
-            setState("CANCELLED", "cancelada");
-            bubble("system", "Resposta cancelada.");
-          } else {
-            setState("ERROR", "erro");
-            bubble("error", apiErrorText(0, null));
-          }
-        })
-        .then(function () {
-          inFlight = null;
-          setBusy(false);
-          if (uiState === "COMPLETED" || uiState === "CANCELLED" || uiState === "ERROR") {
-            setState("IDLE", "pronta");
-          }
-        });
-    }
-
-    attempt(true);
+  function createSession() {
+    return fetch("/api/v1/sessions", { method: "POST", cache: "no-store" }).then(function (res) {
+      if (!res.ok) { throw new Error("session.create.failed:" + res.status); }
+      return res.json();
+    });
   }
 
-  cancelBtn.addEventListener("click", function () {
-    if (inFlight) { inFlight.abort(); }
-  });
-
-  form.addEventListener("submit", function (ev) {
-    ev.preventDefault();
-    var text = input.value.trim();
-    if (!text || uiState === "PROCESSING") { return; }
-    input.value = "";
-    send(text);
-  });
-
-  // Bootstrap: backend health runs above. If a session id was stored, restore
-  // the conversation history (read-only); otherwise create a fresh session.
-  // History failure is non-fatal: the page stays usable.
-  (function bootstrap() {
-    var stored = null;
-    try { stored = sessionStorage.getItem(SESSION_KEY); } catch (e) { stored = null; }
-    ensureSession().then(function (sid) {
-      loadMemories();  // F3.5: read-only memory list, independent of session state.
-      if (!(stored && stored === sid)) {
-        setState("IDLE", "pronta");
-        return;
+  function ensureSession() {
+    try {
+      var stored = sessionStorage.getItem(SESSION_KEY);
+      if (stored) {
+        S.sessionId = stored;
+        setText("panel-session", shortId(stored));
+        return Promise.resolve({ id: stored, stored: true });
       }
-      loadHistory(sid).then(function (outcome) {
-        if (outcome === "not-found") {
-          // Stored session no longer exists: create a fresh one, once.
-          sessionId = null;
-          try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
-          createSession().then(function () { setState("IDLE", "pronta"); });
-          return;
-        }
-        setState("IDLE", "pronta");
-      }, function () {
-        // History fetch failed (network/error): keep the page usable.
-        setState("IDLE", "pronta");
+    } catch (e) { /* ignore */ }
+    return createSession().then(function (data) {
+      S.sessionId = data.id;
+      try { sessionStorage.setItem(SESSION_KEY, data.id); } catch (e) { /* ignore */ }
+      setText("panel-session", shortId(data.id));
+      return data;
+    });
+  }
+
+  // ---------- backend status ----------
+  function checkHealth() {
+    return fetch("/health", { cache: "no-store" }).then(function (res) {
+      return res.json().then(function (data) {
+        var ok = res.ok && data && data.status === "ok";
+        S.backendOk = !!ok;
+        var el = $("backend-status");
+        if (el) { el.textContent = ok ? ("Online (v" + (data.version || "?") + ")") : "Unavailable"; }
+        setDot("status-dot", ok ? "ok" : "down");
+        setDot("sys-core-dot", ok ? "ok" : "down");
+        setText("sys-core-text", ok ? "online" : "indisponível");
+        setText("sys-backend", ok ? "ok" : "degradado");
+        if (!ok) { setState("backend indisponível"); }
+        return ok;
       });
-    }, function () { setState("IDLE", "pronta (sessão será criada ao enviar)"); });
-  })();
+    }).catch(function () {
+      S.backendOk = false;
+      setText("backend-status", "Unavailable");
+      setDot("status-dot", "down");
+      setDot("sys-core-dot", "down");
+      setText("sys-core-text", "indisponível");
+      setText("sys-backend", "indisponível");
+      setState("backend indisponível");
+      return false;
+    });
+  }
+
+  // ---------- boot ----------
+  function bootCheck(id, ok) {
+    var li = $(id);
+    if (li) { li.className = ok ? "ok" : "fail"; }
+  }
+
+  function dismissBoot() {
+    var b = $("boot");
+    if (b && b.classList && !b.classList.contains("done")) {
+      b.classList.add("done");
+    }
+    S.booted = true;
+  }
+
+  function boot() {
+    var b = $("boot");
+    if (b && b.addEventListener) {
+      b.addEventListener("click", dismissBoot);
+    }
+    var p = checkHealth().then(function (ok) {
+      bootCheck("boot-backend", ok);
+      return ensureSession().then(function () {
+        bootCheck("boot-session", true);
+        loadMemories();
+        return loadHistory(S.sessionId);
+      }, function () {
+        bootCheck("boot-session", false);
+      });
+    });
+    if (typeof setTimeout === "function") {
+      // safety: never trap the user on the boot screen
+      setTimeout(dismissBoot, S.reducedMotion ? 400 : 2600);
+    }
+    p.then(dismissBoot, dismissBoot);
+  }
+
+  // ---------- clock & greeting ----------
+  function tickClock() {
+    var el = $("clock");
+    if (!el) { return; }
+    var d = new Date();
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    el.textContent = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+  }
+
+  function setGreeting() {
+    var h = new Date().getHours();
+    var g = h < 5 ? "Boa madrugada" : (h < 12 ? "Bom dia" : (h < 18 ? "Boa tarde" : "Boa noite"));
+    setText("greeting-title", g + ", Lucas.");
+    setText("greeting-sub", "Sistemas operacionais. O que vamos fazer?");
+  }
+
+  // ---------- wiring ----------
+  function wire() {
+    for (var i = 0; i < VIEWS.length; i++) {
+      (function (v) {
+        var btn = $("nav-" + v);
+        if (btn && btn.addEventListener) { btn.addEventListener("click", function () { go(v); }); }
+      })(VIEWS[i]);
+    }
+    var form = $("composer");
+    if (form && form.addEventListener) {
+      form.addEventListener("submit", function (ev) { ev.preventDefault(); submitComposer(); });
+    }
+    var input = $("input");
+    if (input && input.addEventListener) {
+      input.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); submitComposer(); }
+      });
+    }
+    if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+      document.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape" && S.inFlight) { cancelSend(); }
+      });
+    }
+    var cancelBtn = $("cancel");
+    if (cancelBtn && cancelBtn.addEventListener) {
+      cancelBtn.addEventListener("click", cancelSend);
+    }
+    var rs = $("refresh-sessions");
+    if (rs && rs.addEventListener) { rs.addEventListener("click", loadSessionsView); }
+    var rt = $("refresh-tasks");
+    if (rt && rt.addEventListener) { rt.addEventListener("click", loadTasksView); }
+    var rm = $("refresh-memory");
+    if (rm && rm.addEventListener) { rm.addEventListener("click", loadMemories); }
+    var ra = $("refresh-activity");
+    if (ra && ra.addEventListener) { ra.addEventListener("click", loadActivityView); }
+    var rau = $("refresh-audit");
+    if (rau && rau.addEventListener) { rau.addEventListener("click", loadAuditView); }
+    var ns = $("new-session");
+    if (ns && ns.addEventListener) { ns.addEventListener("click", newSession); }
+    var nq = $("nexus-query");
+    if (nq && nq.addEventListener) { nq.addEventListener("click", queryNexus); }
+    var mt = $("motion-toggle");
+    if (mt && mt.addEventListener) {
+      mt.addEventListener("change", function () { setMotionReduced(!!mt.checked); });
+    }
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      window.addEventListener("hashchange", function () { showView(initialView()); });
+    }
+  }
+
+  // ---------- init ----------
+  setGreeting();
+  tickClock();
+  if (typeof setInterval === "function") { setInterval(tickClock, 15000); }
+  setMotionReduced(osPrefersReduced());
+  Orb.start();
+  Ambient.start();
+  wire();
+  showView(initialView());
+  boot();
 })();
 </script>
 </body>

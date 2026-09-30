@@ -275,10 +275,24 @@ chamada live à OpenAI (sem API key neste ambiente; provider validado com
     da porta `LLMProvider`; `JARVIS_LLM_PROVIDER=fake|openai`; smoke
     `scripts/smoke_llm.py`; reprodução local documentada em
     `docs/LOCAL_DEVELOPMENT.md`.
-- **Fase 4 — JARVIS Orb Interface (apenas documentação, NÃO implementada).**
-  O orb é uma representação visual do estado do sistema — `IDLE`, `LISTENING`,
-  `THINKING`, `EXECUTING`, `SPEAKING`, `ERROR`. O orb **não é** o cérebro do
-  JARVIS: é uma camada de apresentação sobre o pipeline descrito acima.
+  - F3.5 memory/context verification: seção MEMÓRIAS read-only no web shell
+    (rótulo "não verificada"); escrita só via `MEMORY_WRITE` → `MemoryService`.
+  - F3.6 NEXUS demonstration: normalização tolerante nos DTOs de fronteira
+    (contratos canônicos estritos, inalterados); status NEXUS honesto na UI.
+  - F3.7 UX/UI hardening: shell desktop em camadas (UI core / visualização do
+    sistema / ambient), orb central 2D que reflete estados reais do backend
+    (IDLE/PROCESSING/COMPLETED/ERROR/CANCELLED), navegação em 8 views
+    (Home, Sessões, Tarefas, Memória, Atividade, Auditoria, NEXUS, Sistema),
+    `prefers-reduced-motion` + toggle manual. Novos endpoints **read-only**
+    para as views: `GET /api/v1/sessions`, `GET /api/v1/tasks`,
+    `GET /api/v1/audit` (limit 1–50, default 20; auditoria append-only,
+    intocada).
+- **Fase 4 — JARVIS Orb Interface (implementada na F3.7).** O orb é uma
+  representação visual do estado do sistema — `IDLE`, `PROCESSING`,
+  `COMPLETED`, `ERROR`, `CANCELLED`. `LISTENING` existe como estado preparado,
+  mas nunca é exibido: não há backend de voz, e a UI nunca inventa estados.
+  O orb **não é** o cérebro do JARVIS: é uma camada de apresentação sobre o
+  pipeline descrito acima.
 
 ## Como rodar
 

@@ -10,6 +10,8 @@ round-trip deterministic without touching the real NEXUS.
 
 from __future__ import annotations
 
+import re
+
 import httpx
 import pytest
 
@@ -201,8 +203,12 @@ async def test_page_has_no_secrets(client):
     r = await client.get("/")
     assert r.status_code == 200
     lowered = r.text.lower()
-    for token in ("api_key", "apikey", "sk-", "bearer", "password", "secret"):
+    # NOTE (F3.7 correction): the bare "sk-" prefix false-positives on
+    # harmless identifiers (e.g. the "task-list" element id), so the
+    # key-pattern check targets a real key shape instead.
+    for token in ("api_key", "apikey", "bearer", "password", "secret"):
         assert token not in lowered, f"forbidden token in UI: {token}"
+    assert not re.search(r"sk-[A-Za-z0-9]{16,}", r.text)
 
 
 # -- security boundary: browser never talks to NEXUS -------------------------

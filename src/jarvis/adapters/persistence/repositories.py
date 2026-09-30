@@ -218,6 +218,18 @@ class SqlSessionRepository:
             row = await s.get(SessionRow, session_id)
             return _row_to_session(row) if row else None
 
+    async def list_recent(self, *, limit: int = 20) -> list[SessionRecord]:
+        """Newest-first session list (F3.7 read-only view).
+
+        Insertion order via rowid (D45): on Windows the OS clock granularity
+        collapses causally-ordered creates into one timestamp, so ordering by
+        created_at alone is not deterministic.
+        """
+        async with self._db.session() as s:
+            stmt = sa.select(SessionRow).order_by(_insertion_order().desc()).limit(limit)
+            rows = (await s.execute(stmt)).scalars().all()
+            return [_row_to_session(r) for r in rows]
+
 
 class SqlMessageRepository:
     def __init__(self, db: Database) -> None:
@@ -370,6 +382,13 @@ class SqlTaskRepository:
             rows = (await s.execute(stmt)).scalars().all()
             return [_row_to_task(r) for r in rows]
 
+    async def list_recent(self, *, limit: int = 20) -> list[TaskRecord]:
+        """Newest-first task list (F3.7 read-only view). rowid ordering (D45)."""
+        async with self._db.session() as s:
+            stmt = sa.select(TaskRow).order_by(_insertion_order().desc()).limit(limit)
+            rows = (await s.execute(stmt)).scalars().all()
+            return [_row_to_task(r) for r in rows]
+
 
 class SqlAuditRepository:
     """Append-only. This class exposes no update or delete — and neither does
@@ -397,6 +416,18 @@ class SqlAuditRepository:
                 .order_by(AuditLogRow.occurred_at.asc(), _insertion_order().asc())
                 .limit(limit)
             )
+            rows = (await s.execute(stmt)).scalars().all()
+            return [_row_to_audit(r) for r in rows]
+
+    async def list_recent(self, *, limit: int = 50) -> list[AuditLog]:
+        """Newest-first audit event list (F3.7 read-only Activity/Audit views).
+
+        Append-only is preserved: this method (like the class) exposes no
+        update or delete. Audit rows are already redacted at write time (D6),
+        so the full event shape is safe to render.
+        """
+        async with self._db.session() as s:
+            stmt = sa.select(AuditLogRow).order_by(_insertion_order().desc()).limit(limit)
             rows = (await s.execute(stmt)).scalars().all()
             return [_row_to_audit(r) for r in rows]
 

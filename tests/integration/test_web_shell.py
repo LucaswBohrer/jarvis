@@ -87,7 +87,12 @@ async def test_single_file_no_external_assets(client):
 async def test_no_secrets_or_keys_in_ui(client):
     # T5 — the UI exposes no configuration secrets: no API keys, no tokens,
     # no provider/bank references at all.
+    # Note: the "sk-" prefix alone is not a reliable secret indicator (it also
+    # appears in harmless identifiers like task ids / css class names), so the
+    # key-pattern check below targets a real key shape instead (D-correction,
+    # F3.7).
     r = await client.get("/")
     body = r.text.lower()
-    for token in ("api_key", "apikey", "sk-", "bearer", "password", "secret"):
+    for token in ("api_key", "apikey", "bearer", "password", "secret"):
         assert token not in body
+    assert not re.search(r"sk-[A-Za-z0-9]{16,}", r.text)

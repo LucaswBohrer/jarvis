@@ -230,6 +230,32 @@ bind, so this does not conflict with it.
   NEXUS was parsed as NEXUS_CONTRACT_INVALID and reported "indisponível" —
   a false negative. The web shell needed no change: it already POSTs the
   question and renders `payload.message` via textContent (F3.6).
+- D50. The F3.7 orb supersedes `docs/PHASE3_PROPOSAL.md` §9 ("sem orb"): the
+  later master prompt explicitly requires the Central AI Orb, so the newer
+  explicit instruction wins. The orb is a pure visualization layer (Canvas 2D,
+  no 3D/WebGL, no JS framework — the shell stays a single self-contained
+  HTML file): it reflects ONLY real backend states. IDLE / PROCESSING (one
+  "active" visual; THINKING/EXECUTING/RESPONDING are not faked while the
+  backend emits no per-step progress events) / COMPLETED (single pulse, then
+  idle) / ERROR / CANCELLED. LISTENING + the `audioLevel` hook exist as
+  prepared-but-unused API: no voice backend exists, so the orb never enters
+  LISTENING on its own (no faked audio reactivity). No decorative animation:
+  every motion is tied to a real state or ambient layer, all disabled by
+  `prefers-reduced-motion` or the manual toggle (F3.7).
+- D51. F3.7 added three minimal READ-ONLY list endpoints, justified by the
+  documented view requirements (Sessions/Tasks/Activity/Audit views):
+  `GET /api/v1/sessions`, `GET /api/v1/tasks`, `GET /api/v1/audit`
+  (sessions/tasks: limit 1–50, default 20; audit: limit 1–200, default 50 —
+  the audit/activity views need denser streams; newest first via rowid DESC
+  per D45). No new writes, no new capabilities, no policy changes; the audit
+  trail stays append-only (reads never mutate it) and rows are redacted at
+  write time per D6. Slim out-models (`SessionListItemOut`,
+  `TaskListItemOut`) expose only what the views render.
+- D52. The bare `"sk-"` substring is not a reliable secret indicator (it
+  false-positives on identifiers like the `task-list` element id), so the
+  UI secret-scan tests now assert a real key shape (`sk-[A-Za-z0-9]{16,}`)
+  instead of the bare prefix. The invariant (no keys/tokens in the UI) is
+  unchanged; only the detector was corrected (F3.7).
 
 ## Step gates
 

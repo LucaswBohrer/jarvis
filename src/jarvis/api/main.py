@@ -84,6 +84,30 @@ class SessionOut(BaseModel):
     id: str
 
 
+class SessionListItemOut(BaseModel):
+    """Read-only session row for the F3.7 Sessions view (no message bodies)."""
+
+    id: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+class TaskListItemOut(BaseModel):
+    """Read-only task row for the F3.7 Tasks view. State badges render the
+    real 7-state machine; current_step/error_code come straight from the
+    record — never invented by the UI."""
+
+    id: str
+    session_id: str
+    kind: str
+    state: str
+    current_step: str | None
+    error_code: str | None
+    created_at: str
+    updated_at: str
+
+
 class SessionMessageOut(BaseModel):
     """Read-only view of a persisted conversation message (F3.3).
 
@@ -298,6 +322,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         await state.sessions.create(record)
         return {"id": record.id}
 
+    @app.get("/api/v1/sessions")
+    async def list_sessions(
+        state: AppState = Depends(_get_state),
+        limit: int = Query(default=20, ge=1, le=50),
+    ) -> JSONResponse:
+        # F3.7 (D51): read-only session list for the Sessions view. No
+        # policy, no LLM, no NEXUS, no audit, no writes. Newest first.
+        records = await state.sessions.list_recent(limit=limit)
+        return JSONResponse(
+            {
+                "items": [
+                    SessionListItemOut(
+                        id=r.id,
+                        status=r.status.value,
+                        created_at=r.created_at.isoformat(),
+                        updated_at=r.updated_at.isoformat(),
+                    ).model_dump(mode="json")
+                    for r in records
+                ]
+            }
+        )
+
     @app.post("/api/v1/sessions/{session_id}/messages")
     async def send_message(
         session_id: str,
@@ -351,6 +397,45 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if task is None:
             raise _api_error(ErrorCode.NOT_FOUND, ErrorCategory.VALIDATION, "task.not_found", cid)
         return JSONResponse({"task_id": task_id, "cancelled": False, "state": task.state.value})
+
+    @app.get("/api/v1/tasks")
+    async def list_tasks(
+        state: AppState = Depends(_get_state),
+        limit: int = Query(default=20, ge=1, le=50),
+    ) -> JSONResponse:
+        # F3.7 (D51): read-only task list for the Tasks view. No policy, no
+        # LLM, no NEXUS, no audit, no writes. Newest first; the real 7-state
+        # machine values are rendered verbatim by the UI.
+        records = await state.tasks.list_recent(limit=limit)
+        return JSONResponse(
+            {
+                "items": [
+                    TaskListItemOut(
+                        id=r.id,
+                        session_id=r.session_id,
+                        kind=r.kind.value,
+                        state=r.state.value,
+                        current_step=r.current_step,
+                        error_code=r.error_code.value if r.error_code else None,
+                        created_at=r.created_at.isoformat(),
+                        updated_at=r.updated_at.isoformat(),
+                    ).model_dump(mode="json")
+                    for r in records
+                ]
+            }
+        )
+
+    @app.get("/api/v1/audit")
+    async def list_audit(
+        state: AppState = Depends(_get_state),
+        limit: int = Query(default=50, ge=1, le=200),
+    ) -> JSONResponse:
+        # F3.7 (D51): read-only audit event list for the Activity/Audit
+        # views. Append-only is untouched (no update/delete exposed anywhere).
+        # Rows are redacted at write time (D6); the technical view renders the
+        # event shape as-is, never prettified into hiding data.
+        events = await state.audit.list_recent(limit=limit)
+        return JSONResponse({"items": [e.model_dump(mode="json") for e in events]})
 
     # -- memory API v1 (Phase 2, Slice 1) ------------------------------------
     # Writes only via explicit user command; the service enforces
