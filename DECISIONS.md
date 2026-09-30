@@ -202,6 +202,19 @@ bind, so this does not conflict with it.
 - D44. Empty optional env vars mean "unset": `JARVIS_LLM_INPUT_PRICE_PER_1M_USD=`
   (as shipped in `.env.example`) parses to `None` instead of crashing
   pydantic float parsing at first boot (F3.4 clean-room fix).
+- D45. Audit/message list queries tie-break timestamp ties with SQLite
+  `rowid` (true insertion order), not the random-UUID `id`: on Windows the
+  OS clock granularity (~15.6 ms) collapses causally-ordered events into one
+  timestamp and the old tiebreak produced arbitrary orders. No migration —
+  rowid is intrinsic to these append-only rowid tables (F3.4.1 Windows
+  portability fix).
+- D46. Test `repos` fixture disposes its engine in teardown: aiosqlite worker
+  threads must not outlive the test's event loop (`RuntimeError: Event loop
+  is closed`). `Database.close()` is idempotent, so tests that already
+  close `repos["db"]` are unaffected (F3.4.1).
+- D47. No file read in the repo may depend on the OS default codec: test
+  helpers read/write with explicit `encoding="utf-8"` (Windows default is
+  cp1252). Production code already reads TOML in binary mode (F3.4.1).
 
 ## Step gates
 

@@ -136,7 +136,8 @@ async def test_policy_deny_leaves_durable_audit(memory_service, repos, tmp_path)
         "loopback_only = true\n"
         "follow_redirects = false\n"
         "max_response_bytes = 262144\n"
-        "deadline_ms = 3500\n"
+        "deadline_ms = 3500\n",
+        encoding="utf-8",
     )
     denying = MemoryService(
         db=repos["db"],

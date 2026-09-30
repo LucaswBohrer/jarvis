@@ -56,6 +56,19 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
+def _insertion_order() -> sa.ColumnElement[int]:
+    """Deterministic tiebreak for timestamp ties: SQLite ``rowid``.
+
+    ``occurred_at`` comes from the OS clock, whose granularity on Windows is
+    ~15.6 ms — several causally-ordered events routinely share one timestamp.
+    The previous tiebreak (``id ASC``) is a random UUID, i.e. arbitrary order.
+    Every table here is a rowid table with append-only writes, so ``rowid``
+    reproduces the true insertion (causal) order. No migration: rowid is
+    intrinsic to the table.
+    """
+    return sa.column("rowid")
+
+
 def _session_to_row(s: SessionRecord) -> SessionRow:
     return SessionRow(
         id=s.id,
@@ -248,7 +261,7 @@ class SqlMessageRepository:
             stmt = (
                 sa.select(MessageRow)
                 .where(MessageRow.session_id == session_id)
-                .order_by(MessageRow.created_at.asc())
+                .order_by(MessageRow.created_at.asc(), _insertion_order().asc())
                 .limit(limit)
             )
             rows = (await s.execute(stmt)).scalars().all()
@@ -259,7 +272,7 @@ class SqlMessageRepository:
             stmt = (
                 sa.select(MessageRow)
                 .where(MessageRow.task_id == task_id, MessageRow.role == "assistant")
-                .order_by(MessageRow.created_at.asc())
+                .order_by(MessageRow.created_at.asc(), _insertion_order().asc())
             )
             rows = (await s.execute(stmt)).scalars().all()
             return [_row_to_message(r) for r in rows]
@@ -381,7 +394,7 @@ class SqlAuditRepository:
             stmt = (
                 sa.select(AuditLogRow)
                 .where(AuditLogRow.task_id == task_id)
-                .order_by(AuditLogRow.occurred_at.asc(), AuditLogRow.id.asc())
+                .order_by(AuditLogRow.occurred_at.asc(), _insertion_order().asc())
                 .limit(limit)
             )
             rows = (await s.execute(stmt)).scalars().all()

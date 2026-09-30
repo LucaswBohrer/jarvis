@@ -169,7 +169,9 @@ def _run_page(scenario: dict, tmp_path) -> dict:
     """Execute the page's inline <script> under Node with the scripted fetch
     mock; return what the page did (fetch calls, rendered bubbles, UI state)."""
     scenario_file = tmp_path / "scenario.json"
-    scenario_file.write_text(json.dumps(scenario))
+    # Explicit UTF-8 on both ends: on Windows the default codec is cp1252,
+    # while Node reads/writes UTF-8. Without this, "olá" round-trips as "olÃ¡".
+    scenario_file.write_text(json.dumps(scenario), encoding="utf-8")
     node = shutil.which("node")
     assert node, "node is required for the web-shell behavioral tests"
     # S603: fixed argv, no shell; the scenario file lives in pytest's tmp_path.
@@ -177,6 +179,7 @@ def _run_page(scenario: dict, tmp_path) -> dict:
         [node, str(HARNESS), str(INDEX_HTML), str(scenario_file)],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=30,
     )
     assert proc.returncode == 0, f"harness failed: {proc.stderr}"
@@ -287,3 +290,23 @@ def test_page_history_never_calls_nexus_or_uses_local_storage(tmp_path):
         assert ":8000" not in call["url"]
         assert "/api/v1/equipment" not in call["url"]
     assert all(b["kind"] in BUBBLE_KINDS for b in result["bubbles"])
+
+
+def test_page_history_preserves_unicode_end_to_end(tmp_path):
+    # T12 (F3.4.1 regression): non-ASCII text must survive the whole chain
+    # Python -> scenario.json -> Node -> stubbed DOM -> textContent exactly.
+    # On Windows the default codec (cp1252) used to corrupt this into mojibake
+    # ("olá" observed as "olÃ¡").
+    sample = "Olá, JARVIS! äçõ € — 📌"
+    result = _run_page(
+        {
+            "storedSession": "sess-1",
+            "history": [
+                {"role": "user", "content": sample},
+                {"role": "assistant", "content": sample},
+            ],
+        },
+        tmp_path,
+    )
+    assert [b["text"] for b in result["bubbles"]] == [sample, sample]
+    assert [b["kind"] for b in result["bubbles"]] == ["user", "assistant"]

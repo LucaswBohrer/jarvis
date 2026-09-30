@@ -113,18 +113,30 @@ def settings(db_url):
 
 
 @pytest.fixture()
-def repos(db_url):
+async def repos(db_url):
+    """Repository bundle over a fresh migrated DB.
+
+    The engine is disposed in teardown: aiosqlite keeps a worker thread per
+    pooled connection, and if it outlives the test's event loop the thread
+    raises ``RuntimeError: Event loop is closed`` (surfaced as
+    PytestUnhandledThreadExceptionWarning, noisy on Windows). Closing here —
+    before the loop ends — is the correct lifecycle; ``Database.close()`` is
+    idempotent so tests that close ``repos["db"]`` themselves are unaffected.
+    """
     db = Database(db_url)
-    return {
-        "db": db,
-        "sessions": SqlSessionRepository(db),
-        "messages": SqlMessageRepository(db),
-        "tasks": SqlTaskRepository(db),
-        "audit": SqlAuditRepository(db),
-        "memory": SqlMemoryRepository(db),
-        "commitments": SqlCommitmentRepository(db),
-        "service_meta": SqlServiceMetaRepository(db),
-    }
+    try:
+        yield {
+            "db": db,
+            "sessions": SqlSessionRepository(db),
+            "messages": SqlMessageRepository(db),
+            "tasks": SqlTaskRepository(db),
+            "audit": SqlAuditRepository(db),
+            "memory": SqlMemoryRepository(db),
+            "commitments": SqlCommitmentRepository(db),
+            "service_meta": SqlServiceMetaRepository(db),
+        }
+    finally:
+        await db.close()
 
 
 @pytest.fixture()

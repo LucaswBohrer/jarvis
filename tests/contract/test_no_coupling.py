@@ -16,6 +16,16 @@ REPO = Path(__file__).resolve().parent.parent.parent
 SRC = REPO / "src" / "jarvis"
 
 
+def _read_text(path: Path) -> str:
+    """Read a repo text file as UTF-8.
+
+    Never rely on locale.getpreferredencoding(): on Windows the default is
+    cp1252 and several source files contain non-ASCII characters (comments
+    with emoji/dashes), which raises UnicodeDecodeError there.
+    """
+    return path.read_text(encoding="utf-8")
+
+
 def _py_files():
     return [p for p in SRC.rglob("*.py") if "__pycache__" not in p.parts]
 
@@ -23,7 +33,7 @@ def _py_files():
 def test_no_nexus_imports():
     offenders = []
     for path in _py_files():
-        text = path.read_text()
+        text = _read_text(path)
         for lineno, line in enumerate(text.splitlines(), 1):
             stripped = line.strip()
             if stripped.startswith("#"):
@@ -59,12 +69,12 @@ def test_no_nexus_database_paths():
 
     offenders = []
     for path in _py_files():
-        for hit in scan(path.read_text()):
+        for hit in scan(_read_text(path)):
             offenders.append(f"{path.relative_to(REPO)}: {hit}")
     # Also scan config examples and policy files.
     for extra in [REPO / ".env.example", REPO / "config" / "policy.toml", REPO / "alembic.ini"]:
         if extra.exists():
-            for hit in scan(extra.read_text()):
+            for hit in scan(_read_text(extra)):
                 offenders.append(f"{extra.relative_to(REPO)}: {hit}")
     assert not offenders, "NEXUS database path found:\n" + "\n".join(offenders)
 
@@ -73,7 +83,7 @@ def test_only_api_v1_endpoints():
     """Every literal NEXUS path must live under /api/v1/."""
     offenders = []
     for path in _py_files():
-        for lineno, line in enumerate(path.read_text().splitlines(), 1):
+        for lineno, line in enumerate(_read_text(path).splitlines(), 1):
             for match in re.finditer(r'"/api[^"]*"', line):
                 url = match.group(0).strip('"')
                 if not url.startswith("/api/v1/"):
@@ -90,5 +100,14 @@ def test_no_nexus_modules_importable_from_jarvis():
 
 def test_no_wildcard_capabilities_in_policy():
     """Deny-by-default: policy.toml must not contain wildcard capabilities."""
-    text = (REPO / "config" / "policy.toml").read_text()
+    text = _read_text(REPO / "config" / "policy.toml")
     assert "*" not in text, "wildcard found in policy.toml"
+
+
+def test_read_text_is_utf8_regardless_of_platform(tmp_path):
+    """Regression (F3.4.1): repo text files must be read as UTF-8, never with
+    the OS default codec (cp1252 on Windows raised UnicodeDecodeError)."""
+    probe = tmp_path / "probe.txt"
+    sample = "Olá, JARVIS! äçõ € — 📌"
+    probe.write_bytes(sample.encode("utf-8"))
+    assert _read_text(probe) == sample
