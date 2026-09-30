@@ -441,7 +441,6 @@ body {
 .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
 .btn-ghost:active:not(:disabled) { transform: scale(0.97); }
 .btn-ghost:disabled { opacity: 0.4; cursor: default; }
-#cancel { display: none; } /* superseded by the morphing #send stop state */
 button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ============================================================
@@ -933,7 +932,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     if (app && app.setAttribute) { app.setAttribute("data-motion", on ? "reduced" : "full"); }
     var t = $("motion-toggle");
     if (t && "checked" in t) { t.checked = !!on; }
-    Orb.drawOnce();
+    if (on) { Orb.drawOnce(); }
+    else { Orb.wake(); }
+    moveNavIndicator();
   }
 
   // ---------- orb (system visualization, layer 2) ----------
@@ -1228,7 +1229,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       restart();
     }
 
-    return { setState: setState, setAudioLevel: setAudioLevel, pulse: pulse, drawOnce: drawOnce, start: start };
+    return { setState: setState, setAudioLevel: setAudioLevel, pulse: pulse, drawOnce: drawOnce, wake: restart, start: start };
   })();
 
   // ---------- ambient particle layer (layer 3) ----------
@@ -1340,6 +1341,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       if (btn && btn.setAttribute) { btn.setAttribute("aria-current", v === name ? "true" : "false"); }
     }
     moveNavIndicator();
+    if (name === "home") { Orb.wake(); } // resume plasma loop after being hidden
     if (name === "sessions") { loadSessionsView(); }
     else if (name === "tasks") { loadTasksView(); }
     else if (name === "memory") { loadMemories(); }
