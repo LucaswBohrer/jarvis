@@ -50,6 +50,15 @@
   }
   button:disabled { opacity: 0.5; cursor: default; }
   button#cancel { background: #8957e5; }
+  /* F3.5: read-only memories section. Minimal on purpose — the F3.7 UX
+     phase owns the visual redesign. No lifecycle actions here. */
+  #memories { margin-top: 1rem; border-top: 1px solid #21262d; padding-top: 0.75rem; }
+  #memories h2 { font-size: 0.95rem; margin: 0 0 0.25rem; letter-spacing: 0.1em; }
+  .mem-note { font-size: 0.75rem; color: #8b949e; margin: 0 0 0.5rem; }
+  .mem { padding: 0.4rem 0; border-bottom: 1px solid #21262d; }
+  .mem-title { font-size: 0.9rem; }
+  .mem-meta { font-size: 0.7rem; color: #8b949e; font-family: monospace; margin-top: 0.15rem; }
+  .mem-empty { color: #8b949e; font-style: italic; font-size: 0.85rem; }
 </style>
 </head>
 <body>
@@ -66,6 +75,11 @@
     <button id="send" type="submit">Enviar</button>
     <button id="cancel" type="button" hidden>Cancelar</button>
   </form>
+  <section id="memories" aria-label="Memórias">
+    <h2>MEMÓRIAS</h2>
+    <p class="mem-note">Declarações suas que guardei — não verificadas, nunca tratadas como fatos medidos.</p>
+    <div id="memory-list"></div>
+  </section>
 </main>
 <script>
 (function () {
@@ -81,6 +95,7 @@
   var input = document.getElementById("input");
   var sendBtn = document.getElementById("send");
   var cancelBtn = document.getElementById("cancel");
+  var memoryList = document.getElementById("memory-list");
 
   var uiState = "IDLE";       // IDLE | PROCESSING | COMPLETED | ERROR | CANCELLED
   var inFlight = null;        // AbortController for the current send, if any
@@ -188,6 +203,63 @@
       });
   }
 
+  // -- memories (F3.5) -------------------------------------------------------
+  // Read-only display of stored memories via GET /api/v1/memory. The page
+  // never mutates memory lifecycle: no confirm/revoke/supersede/delete here
+  // — those stay in the backend flow. Memories are labeled "não verificada"
+  // to match MemoryCtx.verified=False (a past user statement, never a
+  // measured fact). All rendering via textContent, like the chat.
+  function memoryLabel(item) {
+    var kind = item.kind || "?";
+    var status = item.status || "?";
+    return kind + " · " + status + " · não verificada";
+  }
+
+  function renderMemory(item) {
+    var wrap = document.createElement("div");
+    wrap.className = "mem";
+    var title = document.createElement("div");
+    title.className = "mem-title";
+    title.textContent = item.title || "";
+    var meta = document.createElement("div");
+    meta.className = "mem-meta";
+    meta.textContent = memoryLabel(item);
+    wrap.appendChild(title);
+    wrap.appendChild(meta);
+    memoryList.appendChild(wrap);
+  }
+
+  function loadMemories() {
+    if (!memoryList) { return Promise.resolve("no-list"); }
+    return fetch("/api/v1/memory?limit=20", { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) { throw new Error("memories.failed:" + res.status); }
+        return res.json();
+      })
+      .then(function (payload) {
+        var items = (payload && Array.isArray(payload.items)) ? payload.items : [];
+        memoryList.textContent = "";
+        if (items.length === 0) {
+          var empty = document.createElement("div");
+          empty.className = "mem-empty";
+          empty.textContent = "Nenhuma memória ainda.";
+          memoryList.appendChild(empty);
+        } else {
+          items.forEach(renderMemory);
+        }
+        return "ok";
+      })
+      .catch(function () {
+        // Memory list failure is non-fatal: the chat stays usable.
+        memoryList.textContent = "";
+        var err = document.createElement("div");
+        err.className = "mem-empty";
+        err.textContent = "Não foi possível carregar as memórias.";
+        memoryList.appendChild(err);
+        return "failed";
+      });
+  }
+
   // -- error rendering: only what the API actually returned ----------------
   function apiErrorText(status, payload) {
     var key = (payload && payload.error && payload.error.message_key) || "unknown";
@@ -249,6 +321,7 @@
           var meta = "status: " + (payload.status || "?") + " · fonte: " + (payload.source || "?");
           bubble("assistant", payload.message || "", meta);
           setState("COMPLETED", "resposta recebida");
+          loadMemories();  // F3.5: a memory write ("lembre-se de X") shows up here.
         })
         .catch(function (err) {
           if (err && err.name === "AbortError") {
@@ -290,6 +363,7 @@
     var stored = null;
     try { stored = sessionStorage.getItem(SESSION_KEY); } catch (e) { stored = null; }
     ensureSession().then(function (sid) {
+      loadMemories();  // F3.5: read-only memory list, independent of session state.
       if (!(stored && stored === sid)) {
         setState("IDLE", "pronta");
         return;

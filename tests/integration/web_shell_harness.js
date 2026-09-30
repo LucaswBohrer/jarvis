@@ -14,6 +14,8 @@
 //     "history": [ {role, content}, ... ] // GET .../messages payload
 //              | { "__status": 404 }       // GET .../messages fails with 404
 //              | { "__fail": true }        // GET .../messages throws (network)
+//     "memories": [ {kind, title, status}, ... ] // GET /api/v1/memory payload
+//              | { "__fail": true }        // GET /api/v1/memory throws (network)
 //   }
 
 const fs = require("fs");
@@ -37,6 +39,7 @@ if (/innerHTML/.test(pageSrc)) {
 
 const fetchCalls = [];
 const bubbles = []; // {kind, text, meta}
+const memoryItems = []; // F3.5: {title, meta} rendered into #memory-list
 
 function makeEl(id) {
   return {
@@ -66,6 +69,15 @@ function makeEl(id) {
           meta: meta ? meta.textContent : null,
         });
       }
+      if (this._id === "memory-list") {
+        // F3.5: record rendered memories as {title, meta} pairs.
+        const title = child.children[0];
+        const meta = child.children[1];
+        memoryItems.push({
+          title: title ? title.textContent : child.textContent,
+          meta: meta ? meta.textContent : null,
+        });
+      }
       return child;
     },
     addEventListener() {},
@@ -85,6 +97,7 @@ const elements = {};
   "cancel",
   "backend-status",
   "status-dot",
+  "memory-list",
 ].forEach((id) => {
   elements[id] = makeEl(id);
 });
@@ -146,6 +159,12 @@ async function fetchStub(url, opts) {
     }
     return makeRes({ ok: true, status: 200, jsonBody: { messages: h || [] } });
   }
+  // F3.5: read-only memory list.
+  if (url.startsWith("/api/v1/memory") && method === "GET") {
+    const mem = scenario.memories;
+    if (mem && mem.__fail) throw new Error("network down");
+    return makeRes({ ok: true, status: 200, jsonBody: { items: mem || [] } });
+  }
   throw new Error("unexpected fetch: " + method + " " + url);
 }
 
@@ -180,6 +199,7 @@ vm.createContext(sandbox);
     JSON.stringify({
       fetchCalls,
       bubbles,
+      memoryItems,
       stateLine: elements["state-line"].textContent,
       storedSession: sessionStorageStub.getItem("jarvis.session.id"),
     })

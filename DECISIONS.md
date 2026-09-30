@@ -215,6 +215,13 @@ bind, so this does not conflict with it.
 - D47. No file read in the repo may depend on the OS default codec: test
   helpers read/write with explicit `encoding="utf-8"` (Windows default is
   cp1252). Production code already reads TOML in binary mode (F3.4.1).
+- D48. The web shell's memory section is strictly read-only: it renders
+  `GET /api/v1/memory` via textContent and offers no lifecycle actions
+  (confirm/revoke/supersede/delete stay in the backend flow). Every memory
+  is labeled "não verificada" in the UI, matching `MemoryCtx.verified=False`
+  (a past user statement, never a measured fact). Memory writes from chat
+  keep flowing through the existing MEMORY_WRITE → MemoryService path with
+  secret scan — the UI adds no second write path (F3.5).
 
 ## Step gates
 
