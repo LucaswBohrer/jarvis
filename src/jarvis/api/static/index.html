@@ -113,11 +113,22 @@ body {
   background-size: 28px 28px;
   -webkit-mask-image: radial-gradient(ellipse 90% 75% at 50% 42%, black 25%, transparent 78%);
   mask-image: radial-gradient(ellipse 90% 75% at 50% 42%, black 25%, transparent 78%);
-  opacity: 0.5;
+  /* ambient computation: the field breathes with system energy */
+  opacity: calc(0.32 + var(--ambient-energy, 0.15) * 0.5);
+}
+/* cursor light: contextual light, extremely subtle. Follows the pointer
+   with heavy inertia — the space notices the hand, barely. */
+#cursor-light {
+  position: fixed; left: 0; top: 0; width: 520px; height: 520px;
+  z-index: 1; pointer-events: none;
+  background: radial-gradient(circle, rgba(63, 224, 195, 0.05), transparent 65%);
+  opacity: 0.5; will-change: transform;
 }
 /* stratum 3: aurora — teal/blue/violet, very low alpha, slow drift.
    Hue slowly breathes so the palette never feels frozen. */
-#aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+#aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+  /* ambient computation: the aurora is the system's breath */
+  opacity: calc(0.45 + var(--ambient-energy, 0.15) * 0.55); }
 #aurora i {
   position: absolute; border-radius: 50%;
   filter: blur(90px); opacity: 0.10;
@@ -1958,11 +1969,14 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 
     function draw(t) {
       ctx.clearRect(0, 0, Wd, Ht);
+      // ambient computation: particle presence follows system energy
+      var energy = 0.55 + Ambience.level() * 1.0;
+      var speedMul = 0.7 + Ambience.level() * 0.9;
       for (var i = 0; i < parts.length; i++) {
         var p = parts[i];
-        p.y -= p.vy; p.x += p.vx;
+        p.y -= p.vy * speedMul; p.x += p.vx;
         if (p.y < -4) { p.y = Ht + 4; p.x = Math.random() * Wd; }
-        var tw = p.a * (0.7 + 0.3 * Math.sin(t / 1400 + p.ph));
+        var tw = p.a * (0.7 + 0.3 * Math.sin(t / 1400 + p.ph)) * energy;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(120,180,200," + tw.toFixed(3) + ")";
@@ -2056,6 +2070,94 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     return { start: start };
   })();
 
+  // ---------- ambient computation: the background is a layer ----------
+  // --ambient-energy (0..1) drives the strata (aurora, dotgrid, particles).
+  // It follows REAL system state: idle 0.15, processing 0.7, error 0.32,
+  // offline 0.06, plus a swell on navigation. One lerped rAF, self-
+  // stopping; the cursor light drifts with heavy inertia. Extremely
+  // subtle by design — the field notices, never shouts.
+  var Ambience = (function () {
+    var value = 0.15, target = 0.15, rafId = 0;
+    var canAnimate = (typeof requestAnimationFrame === "function");
+    var light = null, lx = 0, ly = 0, ltx = 0, lty = 0;
+    var swellTimer = 0;
+
+    function baseline() {
+      if (S.backendOk === false) { return 0.06; }
+      if (S.uiState === "PROCESSING") { return 0.7; }
+      if (S.uiState === "ERROR") { return 0.32; }
+      return 0.15;
+    }
+
+    function apply() {
+      try {
+        document.documentElement.style.setProperty("--ambient-energy", value.toFixed(3));
+      } catch (e) { /* ignore */ }
+      if (light && light.style) {
+        light.style.transform = "translate3d(" + lx.toFixed(1) + "px," + ly.toFixed(1) + "px,0)";
+        light.style.opacity = (0.3 + value * 0.7).toFixed(3);
+      }
+    }
+
+    function tick() {
+      rafId = 0;
+      value += (target - value) * 0.06;
+      lx += (ltx - lx) * 0.07;
+      ly += (lty - ly) * 0.07;
+      if (Math.abs(target - value) < 0.0015) { value = target; }
+      apply();
+      var moving = (value !== target) ||
+        Math.abs(ltx - lx) > 0.6 || Math.abs(lty - ly) > 0.6;
+      if (moving && canAnimate && !S.reducedMotion) { rafId = requestAnimationFrame(tick); }
+    }
+
+    function kick() {
+      if (S.reducedMotion) { value = target; apply(); return; }
+      if (!rafId && canAnimate) { rafId = requestAnimationFrame(tick); }
+    }
+
+    // sync: adopt the baseline for the current real state
+    function sync() {
+      if (swellTimer) { return; } // a swell owns the field right now
+      target = baseline();
+      kick();
+    }
+
+    // swell: temporary rise (navigation), then back to baseline
+    function swell(v, ms) {
+      if (S.reducedMotion) { return; }
+      if (swellTimer) { try { clearTimeout(swellTimer); } catch (e) {} swellTimer = 0; }
+      target = Math.max(target, v);
+      kick();
+      swellTimer = setTimeout(function () {
+        swellTimer = 0;
+        target = baseline();
+        kick();
+      }, ms || 700);
+    }
+
+    function start() {
+      try {
+        var l = document.createElement("div");
+        l.id = "cursor-light";
+        l.setAttribute("aria-hidden", "true");
+        document.body.appendChild(l);
+        light = l;
+      } catch (e) { /* ignore */ }
+      if (typeof window !== "undefined" && window.addEventListener) {
+        window.addEventListener("pointermove", function (ev) {
+          ltx = ev.clientX - 260; lty = ev.clientY - 260;
+          kick();
+        }, { passive: true });
+      }
+      apply();
+    }
+
+    function level() { return value; }
+
+    return { start: start, sync: sync, swell: swell, level: level };
+  })();
+
   // ---------- UI state machine (UI-level; mirrors real backend outcomes) ----------
   // IDLE: nothing in flight. PROCESSING: a send is in flight (real).
   // COMPLETED: last send resolved ok (pulse, then back to IDLE).
@@ -2066,6 +2168,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     else if (next === "COMPLETED") { Orb.setState("complete"); }
     else if (next === "ERROR") { Orb.setState("error"); }
     else { Orb.setState("idle"); } // IDLE and CANCELLED settle back to idle
+    // the environment computes with the system: energy follows real state
+    try { Ambience.sync(); } catch (e) { /* Ambience may not exist yet */ }
   }
 
   // ---------- navigation ----------
@@ -2110,6 +2214,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       if (btn && btn.setAttribute) { btn.setAttribute("aria-current", v === name ? "true" : "false"); }
     }
     moveNavIndicator();
+    // the field reacts to the transition, then stabilizes
+    try { Ambience.swell(0.45, 650); } catch (e) { /* ignore */ }
     if (name === "home") { Orb.wake(); } // resume plasma loop after being hidden
     if (name === "sessions") { loadSessionsView(); }
     else if (name === "tasks") { loadTasksView(); }
@@ -3007,6 +3113,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         setText("sys-backend", ok ? "ok" : "degradado");
         if (!ok) { setState("backend indisponível"); }
         updateHomeStatus();
+        try { Ambience.sync(); } catch (e) { /* ignore */ }
         return ok;
       });
     }).catch(function () {
@@ -3181,6 +3288,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   Orb.start();
   Ambient.start();
   Parallax.start();
+  Ambience.start();
   wire();
   showView(initialView());
   renderNexus(); // honest initial state: "não consultado" until a real query
