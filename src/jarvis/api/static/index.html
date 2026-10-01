@@ -288,10 +288,16 @@ body {
    Without this guard ALL 8 views render side-by-side in #main (the F3.7
    overlap bug). Exactly one view is ever visible; the rest are display:none. */
 .view[hidden] { display: none; }
-.view-head { display: flex; align-items: baseline; gap: 0.8rem; }
+.view-head { display: flex; align-items: center; gap: 0.8rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--hairline); margin-bottom: 1rem; }
 .view-head h2 { margin: 0; font-size: 1rem; letter-spacing: 0.2em; font-weight: 650; }
 .view-head .vh-sub { color: var(--faint); font-size: 0.8rem; }
 .view-head .spacer { flex: 1; }
+/* technical index: the view's position in the system */
+.view-index {
+  font-family: var(--font-mono); font-size: 0.62rem; color: var(--faint);
+  letter-spacing: 0.08em; border: 1px solid var(--hairline); border-radius: 3px;
+  padding: 0.3rem 0.55rem; flex: none;
+}
 
 /* ---------- system panel ---------- */
 #syspanel {
@@ -700,10 +706,12 @@ body {
 button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ============================================================
-   Lists — dense hairline rows, not cards. Hover = 5% fill.
+   Lists — instrument readouts, not cards. Each list gets a
+   CSS-counter index column (no JS changes): sessions read as an
+   explorer, tasks as a monitor, activity/audit as traces.
    ============================================================ */
 .toolbar { display: flex; gap: 0.6rem; align-items: center; }
-.list { display: flex; flex-direction: column; }
+.list { display: flex; flex-direction: column; counter-reset: jrow; }
 .row {
   border-bottom: 1px solid var(--hairline);
   padding: 0.6rem 0.75rem;
@@ -713,18 +721,29 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   position: relative;
   border-radius: 6px;
 }
+/* instrument index column */
+.row::before {
+  counter-increment: jrow;
+  content: counter(jrow, decimal-leading-zero);
+  font-family: var(--font-mono); font-size: 0.64rem; color: var(--faint);
+  letter-spacing: 0.06em; flex: none; width: 2em; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 .row:hover { background: rgba(255, 255, 255, 0.035); }
+.row:hover::before { color: var(--muted); }
 .row.clickable { cursor: pointer; }
 .row.clickable:hover { transform: translateX(3px); background: rgba(63, 224, 195, 0.05); }
 .row .r-title { font-size: 0.9rem; }
 .row .r-meta { font-size: 0.7rem; color: var(--faint); font-family: var(--font-mono); margin-top: 0.15rem; }
 .row .r-main { flex: 1; min-width: 0; }
 .row .r-side { flex: none; display: flex; align-items: center; gap: 0.5rem; }
+/* badges: instrument tags, not pills — chamfered corner, mono, tracked */
 .badge {
-  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em;
-  padding: 0.2rem 0.55rem; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.24rem 0.6rem; border-radius: 2px;
   border: 1px solid var(--border); color: var(--muted);
   white-space: nowrap;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
 }
 .badge.ok { color: var(--ok); border-color: rgba(63, 185, 80, 0.4); background: rgba(63, 185, 80, 0.08); }
 .badge.warn { color: var(--warn); border-color: rgba(210, 153, 34, 0.4); background: rgba(210, 153, 34, 0.08); }
@@ -733,19 +752,26 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 .badge.accent { color: var(--accent); border-color: rgba(63, 224, 195, 0.4); background: var(--accent-soft); }
 /* current session: 2px teal left border + 3% fill */
 .row.is-current { border-left: 2px solid var(--accent); background: rgba(63, 224, 195, 0.03); padding-left: calc(0.75rem - 2px); }
-/* empty state: glyph + heading + one honest line */
+/* TASK MONITOR: the row's left edge carries the task's real status color */
+#task-list .row:has(.badge.ok) { border-left: 2px solid rgba(63, 185, 80, 0.6); }
+#task-list .row:has(.badge.err) { border-left: 2px solid rgba(248, 81, 73, 0.6); }
+#task-list .row:has(.badge.warn) { border-left: 2px solid rgba(210, 153, 34, 0.6); }
+#task-list .row:has(.badge.accent) { border-left: 2px solid rgba(63, 224, 195, 0.6); }
+#task-list .row:has(.badge.info) { border-left: 2px solid rgba(88, 166, 255, 0.6); }
+/* empty state: instrument at rest — hairline frame, glyph, honest line */
 .empty {
   color: var(--faint); font-size: 0.9rem;
-  padding: 2.2rem 1.6rem; text-align: center;
-  border: 1px dashed var(--border); border-radius: var(--radius);
-  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  padding: 2.6rem 1.6rem; text-align: center;
+  border: 1px solid var(--hairline); border-radius: var(--radius);
+  background: rgba(7, 11, 18, 0.4);
+  display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
 }
 .empty .e-glyph {
-  font-size: 1.6rem; color: var(--border); line-height: 1;
+  font-size: 1.5rem; color: var(--border); line-height: 1;
   -webkit-text-stroke: 1px var(--faint);
 }
-.empty .e-title { color: var(--muted); font-size: 0.95rem; font-weight: 600; }
-.empty .e-sub { font-size: 0.8rem; max-width: 34ch; }
+.empty .e-title { color: var(--muted); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.02em; }
+.empty .e-sub { font-size: 0.8rem; max-width: 36ch; font-family: var(--font-mono); }
 .note { color: var(--faint); font-size: 0.8rem; }
 
 /* skeleton loading rows — shimmer, inserted only after 200ms (anti-flicker) */
@@ -766,13 +792,19 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 }
 .spot:hover::after { opacity: 1; }
 
-/* activity stream */
+/* activity: LIVE SYSTEM STREAM — outcome dots glow with their real color */
 #activity-list .row { font-family: var(--font-mono); font-size: 0.78rem; }
-#activity-list .ev-time { color: var(--faint); flex: none; }
+#activity-list .ev-time { color: var(--faint); flex: none; font-variant-numeric: tabular-nums; }
 #activity-list .ev-type { color: var(--text); flex: 1; }
-#activity-list .ev-dot { width: 8px; height: 8px; border-radius: 50%; }
+#activity-list .ev-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 8px currentColor; }
 
-/* audit technical rows */
+/* memory: KNOWLEDGE LAYER — entries read as archived records, always
+   labeled "não verificada" by the loader (never measured facts) */
+#memory-list .row .r-title { font-family: var(--font-mono); font-size: 0.85rem; }
+#memory-list .row { border-left: 1px solid transparent; }
+#memory-list .row:hover { border-left-color: var(--border); }
+
+/* audit: EXECUTION TRACE — dense mono, keys dimmed, values carry outcome color */
 #audit-list .row { align-items: flex-start; }
 .audit-ev { font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.65; word-break: break-word; }
 .audit-ev .ak { color: var(--faint); }
@@ -990,7 +1022,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <!-- SESSIONS -->
     <section class="view" id="view-sessions" aria-label="Sessões" hidden>
       <div class="view-head">
-        <h2>SESSÕES</h2><span class="vh-sub">conversas registradas</span>
+        <span class="view-index">02</span><h2>SESSÕES</h2><span class="vh-sub">conversas registradas</span>
         <span class="spacer"></span>
         <div class="toolbar">
           <button class="btn-ghost" id="new-session" type="button">Nova sessão</button>
@@ -1003,7 +1035,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <!-- TASKS -->
     <section class="view" id="view-tasks" aria-label="Tarefas" hidden>
       <div class="view-head">
-        <h2>TAREFAS</h2><span class="vh-sub">execuções do orquestrador</span>
+        <span class="view-index">03</span><h2>TAREFAS</h2><span class="vh-sub">execuções do orquestrador</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn-ghost" id="refresh-tasks" type="button">Atualizar</button></div>
       </div>
@@ -1013,7 +1045,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <!-- MEMORY (F3.5: strictly read-only) -->
     <section class="view" id="view-memory" aria-label="Memória" hidden>
       <div class="view-head">
-        <h2>MEMÓRIA</h2><span class="vh-sub">declarações suas — não verificadas, nunca fatos medidos</span>
+        <span class="view-index">04</span><h2>MEMÓRIA</h2><span class="vh-sub">declarações suas — não verificadas, nunca fatos medidos</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn-ghost" id="refresh-memory" type="button">Atualizar</button></div>
       </div>
@@ -1023,7 +1055,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <!-- ACTIVITY -->
     <section class="view" id="view-activity" aria-label="Atividade" hidden>
       <div class="view-head">
-        <h2>ATIVIDADE</h2><span class="vh-sub">eventos recentes do sistema</span>
+        <span class="view-index">05</span><h2>ATIVIDADE</h2><span class="vh-sub">eventos recentes do sistema</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn-ghost" id="refresh-activity" type="button">Atualizar</button></div>
       </div>
@@ -1033,7 +1065,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <!-- AUDIT -->
     <section class="view" id="view-audit" aria-label="Auditoria" hidden>
       <div class="view-head">
-        <h2>AUDITORIA</h2><span class="vh-sub">trilha técnica append-only</span>
+        <span class="view-index">06</span><h2>AUDITORIA</h2><span class="vh-sub">trilha técnica append-only</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn-ghost" id="refresh-audit" type="button">Atualizar</button></div>
       </div>
@@ -1044,7 +1076,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <!-- NEXUS (F3.6: honest status only) -->
     <section class="view" id="view-nexus" aria-label="NEXUS" hidden>
       <div class="view-head">
-        <h2>NEXUS</h2><span class="vh-sub">integração de monitoramento elétrico</span>
+        <span class="view-index">07</span><h2>NEXUS</h2><span class="vh-sub">integração de monitoramento elétrico</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn" id="nexus-query" type="button">Consultar agora</button></div>
       </div>
@@ -1065,7 +1097,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 
     <!-- SYSTEM -->
     <section class="view" id="view-system" aria-label="Sistema" hidden>
-      <div class="view-head"><h2>SISTEMA</h2><span class="vh-sub">estado operacional</span></div>
+      <div class="view-head"><span class="view-index">08</span><h2>SISTEMA</h2><span class="vh-sub">estado operacional</span></div>
       <section class="sys-panel spot" aria-label="Backend">
         <div class="sp-head"><span class="sp-index">01</span><span class="sp-title">Backend</span><span class="sp-pip on" aria-hidden="true"></span></div>
         <div class="kv"><span class="k">status</span><span class="v" id="sys-backend">—</span></div>
@@ -1927,7 +1959,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         row.className = "row";
         var dot = document.createElement("span");
         dot.className = "ev-dot";
-        if (dot.style) { dot.style.background = outcomeColor(ev.outcome); }
+        if (dot.style) { dot.style.background = outcomeColor(ev.outcome); dot.style.color = outcomeColor(ev.outcome); }
         var time = document.createElement("span");
         time.className = "ev-time";
         time.textContent = fmtTime(ev.occurred_at);
