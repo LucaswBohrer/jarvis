@@ -429,20 +429,64 @@ body {
 .msg.error { align-self: flex-start; background: rgba(248, 81, 73, 0.08); border-color: rgba(248, 81, 73, 0.45); color: #ffb4ab; }
 .msg .meta { font-size: 0.68rem; color: var(--faint); margin-top: 0.4rem; font-family: var(--font-mono); }
 
-/* ---------- composer: the central instrument ---------- */
+/* ---------- COMMAND SURFACE: the orb's instrument, not a form ----------
+   Two surface families: panels own technical geometry; the command
+   surface shares the orb's organic register (it is the orb's mouth).
+   Energy line = distilled plasma filament: idle faint, focus lit,
+   typing brighter, processing sweeping. Every state is real. */
 @property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
 #composer-zone { width: min(720px, 100%); z-index: 1; margin-top: 1.1rem; }
 #composer {
   position: relative;
-  display: flex; gap: 0.6rem; align-items: flex-end;
-  background: rgba(11, 18, 32, 0.72);
+  display: flex; gap: 0.55rem; align-items: flex-end;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(63, 224, 195, 0.045), transparent 55%),
+    linear-gradient(180deg, var(--surface-2), var(--surface));
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 0.55rem 0.55rem 0.55rem 0.9rem;
-  transition: border-color var(--d-fast), box-shadow var(--d-fast);
+  padding: 0.6rem 0.6rem 0.6rem 0.5rem;
+  transition: border-color var(--d-fast), box-shadow var(--d-med), transform var(--d-med) var(--ease-out);
   backdrop-filter: blur(12px);
 }
-/* border beam: animated conic border on focus / while processing (real states) */
+/* energy line: the filament. Lives on the top edge. */
+.cmd-energy {
+  position: absolute; top: -1px; left: 8%; right: 8%; height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--tick) 30%, var(--accent) 50%, var(--tick) 70%, transparent);
+  opacity: 0.18;
+  transition: opacity var(--d-med);
+  pointer-events: none;
+}
+/* prompt glyph: the surface speaks terminal, not web form */
+.cmd-prompt {
+  flex: none; align-self: center;
+  font-family: var(--font-mono); font-size: 1.25rem; line-height: 1;
+  color: var(--faint); padding: 0 0.1rem 0 0.55rem;
+  transition: color var(--d-fast), text-shadow var(--d-fast);
+  user-select: none;
+}
+/* INPUT SYSTEM — idle / hover / focus / typing / busy / disabled.
+   Hover brightens toward white-alpha (HUD law), never toward hue. */
+#composer:hover { border-color: #2b3d64; }
+#composer:focus-within {
+  border-color: rgba(63, 224, 195, 0.5);
+  box-shadow: 0 0 0 3px rgba(63, 224, 195, 0.07), 0 8px 32px rgba(0, 0, 0, 0.45);
+  transform: translateY(-1px);
+}
+#composer:focus-within .cmd-energy { opacity: 0.9; }
+#composer:focus-within .cmd-prompt { color: var(--accent); text-shadow: 0 0 10px var(--accent-glow); }
+#composer.typing .cmd-energy { opacity: 1; box-shadow: 0 0 12px var(--accent-glow); }
+#composer.busy { border-color: rgba(63, 224, 195, 0.5); }
+#composer.busy .cmd-energy { opacity: 1; animation: energySweep 1.8s linear infinite; }
+@keyframes energySweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+#composer.busy .cmd-energy {
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  background-size: 200% 100%;
+}
+/* border beam: animated conic border while processing (real state only) */
 #composer.beam::before {
   content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
   background: conic-gradient(from var(--beam-angle),
@@ -455,8 +499,6 @@ body {
   opacity: 0.85;
 }
 @keyframes beamSpin { to { --beam-angle: 360deg; } }
-#composer:focus-within { border-color: rgba(63, 224, 195, 0.45); box-shadow: 0 0 0 3px rgba(63, 224, 195, 0.07); }
-#composer.busy { border-color: rgba(63, 224, 195, 0.45); }
 #input {
   flex: 1; resize: none; background: transparent; color: var(--text);
   border: none; outline: none; padding: 0.6rem 0.2rem;
@@ -464,15 +506,19 @@ body {
 }
 #input:disabled { opacity: 0.55; }
 #input::placeholder { color: var(--faint); }
-/* send / stop: one button that morphs with the real request state */
+/* dispatch key: one control that morphs with the real request state.
+   Idle = quiet teal key; hover = 1px lift + glow; active = press;
+   stop = danger morph (real cancellation state). */
 #send {
   position: relative; flex: none;
   width: 2.9rem; height: 2.9rem; border-radius: 12px;
-  background: var(--accent); color: #04231d; border: none;
+  background: linear-gradient(180deg, #4ce8cc, var(--accent) 60%, #2bd3b2);
+  color: #04231d; border: 1px solid rgba(63, 224, 195, 0.65);
   font-size: 1.15rem; line-height: 1; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  transition: transform var(--d-fast) var(--ease-out), box-shadow var(--d-fast), opacity var(--d-fast), background var(--d-fast);
+  transition: transform var(--d-fast) var(--ease-out), box-shadow var(--d-fast), opacity var(--d-fast), background var(--d-fast), border-color var(--d-fast);
   overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 10px rgba(63, 224, 195, 0.18);
 }
 #send::after { /* hover shimmer sweep */
   content: ""; position: absolute; inset: 0;
@@ -784,7 +830,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       </div>
       <div id="conversation" aria-live="polite" aria-label="Conversa"></div>
       <div id="composer-zone">
-        <form id="composer">
+        <form id="composer" aria-label="Superfície de comando">
+          <span class="cmd-energy" aria-hidden="true"></span>
+          <span class="cmd-prompt" aria-hidden="true">›</span>
           <textarea id="input" rows="1" maxlength="2000" placeholder="Pergunte ao JARVIS…" aria-label="Mensagem"></textarea>
           <button id="send" type="submit" aria-label="Enviar mensagem" title="Enviar (Enter)">↑</button>
         </form>
@@ -1045,6 +1093,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     var energy = 0.22, energyTarget = 0.22;
     var boost = 0;            // pointer-velocity energy injection (decays)
     var kick = 0;             // send-sequence contraction kick (decays fast)
+    var attention = 0;        // composer-focus lift: the orb "pays attention" (real interaction)
     var rafId = 0;
     var mx = CX, my = CY, hasPointer = false, lastPX = 0, lastPY = 0, lastPT = 0;
 
@@ -1260,8 +1309,16 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 
     function drawOnce() {
       if (!ctx) { return; }
-      energy = energyTarget; boost = 0; kick = 0;
+      energy = energyTarget + attention * 0.16; boost = 0; kick = 0;
       draw(8000); // fixed timestamp: a calm, representative still frame
+    }
+
+    // Composer focus -> the orb lifts its energy slightly. Real interaction,
+    // not a state: it never changes the orb's state label.
+    function setAttention(on) {
+      attention = on ? 1 : 0;
+      drawOnce();
+      restart();
     }
 
     function loop(tms) {
@@ -1270,8 +1327,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       // skip work while the Home view is hidden
       if (wrap && !wrap.offsetParent) { rafId = 0; return; }
       var t = (tms || now()) / 1000;
-      // energy easing: REAL state target + pointer boost + send kick
-      energy += (energyTarget - energy) * 0.045;
+      // energy easing: REAL state target + pointer boost + send kick + attention
+      energy += ((energyTarget + attention * 0.16) - energy) * 0.045;
       boost *= 0.94;
       kick *= 0.90;
       // pointer velocity injects temporary energy (real interaction)
@@ -1314,7 +1371,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       restart();
     }
 
-    return { setState: setState, setAudioLevel: setAudioLevel, pulse: pulse, drawOnce: drawOnce, wake: restart, start: start };
+    return { setState: setState, setAudioLevel: setAudioLevel, pulse: pulse, drawOnce: drawOnce, wake: restart, start: start, setAttention: setAttention };
   })();
 
   // ---------- ambient particle layer (layer 3) ----------
@@ -2088,6 +2145,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     var text = input.value.trim();
     if (!text) { return; }
     input.value = "";
+    var cz = $("composer");
+    if (cz && cz.classList) { cz.classList.remove("typing"); }
     send(text);
   }
 
@@ -2274,10 +2333,17 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       input.addEventListener("focus", function () {
         var c = $("composer");
         if (c && c.classList && !S.inFlight && !S.reducedMotion) { c.classList.add("beam"); }
+        Orb.setAttention(true); // the orb "pays attention" — real interaction
       });
       input.addEventListener("blur", function () {
         var c = $("composer");
         if (c && c.classList && !S.inFlight) { c.classList.remove("beam"); }
+        Orb.setAttention(false);
+      });
+      // typing: the energy line brightens with real content (no fake meter)
+      input.addEventListener("input", function () {
+        var c = $("composer");
+        if (c && c.classList) { c.classList.toggle("typing", input.value.length > 0); }
       });
     }
     // cursor spotlight follows the pointer on Home (sets --mx/--my)
