@@ -288,6 +288,9 @@ body {
    Without this guard ALL 8 views render side-by-side in #main (the F3.7
    overlap bug). Exactly one view is ever visible; the rest are display:none. */
 .view[hidden] { display: none; }
+/* view transitions: one calm wave on real navigation */
+.view.view-enter { animation: viewIn 260ms var(--ease-out) both; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .view-head { display: flex; align-items: center; gap: 0.8rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--hairline); margin-bottom: 1rem; }
 .view-head h2 { margin: 0; font-size: 1rem; letter-spacing: 0.2em; font-weight: 650; }
 .view-head .vh-sub { color: var(--faint); font-size: 0.8rem; }
@@ -1662,7 +1665,16 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     for (var i = 0; i < VIEWS.length; i++) {
       var v = VIEWS[i];
       var sec = $("view-" + v);
-      if (sec) { sec.hidden = (v !== name); }
+      if (sec) {
+        var show = (v === name);
+        sec.hidden = !show;
+        // one calm wave on navigation (re-triggered per navigation)
+        if (show && !S.reducedMotion && sec.classList) {
+          sec.classList.remove("view-enter");
+          void sec.offsetWidth;
+          sec.classList.add("view-enter");
+        }
+      }
       var btn = $("nav-" + v);
       if (btn && btn.setAttribute) { btn.setAttribute("aria-current", v === name ? "true" : "false"); }
     }
@@ -1956,7 +1968,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       if (!items.length) { list.appendChild(emptyRow("Nenhuma atividade registrada.")); return; }
       items.forEach(function (ev, i) {
         var row = document.createElement("div");
-        row.className = "row";
+        row.className = "row spot";
         var dot = document.createElement("span");
         dot.className = "ev-dot";
         if (dot.style) { dot.style.background = outcomeColor(ev.outcome); dot.style.color = outcomeColor(ev.outcome); }
@@ -1988,7 +2000,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       if (!items.length) { list.appendChild(emptyRow("Nenhum evento de auditoria.")); return; }
       items.forEach(function (ev, i) {
         var row = document.createElement("div");
-        row.className = "row";
+        row.className = "row spot";
         var side = document.createElement("div");
         side.className = "r-side";
         side.appendChild(badge(ev.outcome || "—", outcomeBadge(ev.outcome)));
