@@ -1133,10 +1133,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 }
 @media (max-width: 760px) {
   #app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-  #topbar { left: 0; }
+  #topbar { left: 0; padding: 0.9rem 1rem 0; }
   #nav {
     flex-direction: row; overflow-x: auto; overflow-y: hidden;
     padding: 0.6rem 0.8rem; align-items: center; justify-content: flex-start;
+    margin-top: 52px; /* clear the fixed topbar */
   }
   #nav::before { display: none; }
   #nav-indicator { display: none; }
