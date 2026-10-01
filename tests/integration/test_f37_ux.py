@@ -111,7 +111,9 @@ def test_navigation_audit_view(tmp_path: Path) -> None:
     )
     assert result["views"] == ["audit"]
     assert len(result["auditRows"]) == 1
-    detail = result["auditRows"][0][1]
+    # Execution-trace layout: one .trace per task group; the event type,
+    # actor and ids render as plain text somewhere inside the trace.
+    detail = " ".join(result["auditRows"][0])
     assert "turn.completed" in detail
     assert "actor=orchestrator" in detail
 

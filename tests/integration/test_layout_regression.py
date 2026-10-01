@@ -102,11 +102,15 @@ def test_responsive_breakpoints_present() -> None:
 
 
 def test_syspanel_hidden_before_sidebar_collapses() -> None:
-    # The supplementary right panel must disappear before the sidebar is
-    # touched, so main content keeps usable width at 1024x768.
-    css = _style_block(_read_html())
+    # Visual Reset: the supplementary right panel was dissolved entirely —
+    # its content lives in the System view. There is no #syspanel to hide.
+    # The 1240px stage still yields gracefully instead: the statusline
+    # telemetry dissolves and views keep usable width at 1024x768.
+    html = _read_html()
+    assert "syspanel" not in html
+    css = _style_block(html)
     m1240 = re.search(r"@media\s*\(max-width:\s*1240px\)\s*\{([\s\S]*?)\n\}", css)
-    assert m1240 and "#syspanel" in m1240.group(1) and "display: none" in m1240.group(1)
+    assert m1240 and "#statusline" in m1240.group(1) and "display: none" in m1240.group(1)
 
 
 # -- behavioral: one view at a time --------------------------------------------

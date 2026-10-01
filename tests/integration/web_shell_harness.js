@@ -112,7 +112,10 @@ function makeEl(id) {
       if (this._id === "memory-list") {
         // Rows nest title/meta inside .r-main; the empty-state is a
         // structured div.empty whose message lives in .e-title.
-        if (String(child.className || "").split(/\s+/).indexOf("empty") >= 0) {
+        // .mem-kind headings group items by kind — not items; skip.
+        const mcls = String(child.className || "").split(/\s+/);
+        if (mcls.indexOf("mem-kind") >= 0) { return child; }
+        if (mcls.indexOf("empty") >= 0) {
           const et = child.children.find(
             (c) => String(c.className || "").split(/\s+/).indexOf("e-title") >= 0
           );
@@ -333,8 +336,21 @@ vm.createContext(sandbox);
 function rowParts(id) {
   // Rows are list > row > (main > title/meta, side > badges, leaf...):
   // flatten two levels so tests see the visible texts.
+  // The audit view renders execution traces:
+  //   list > .trace > (.trace-head, .trace-spine > .tnode)
+  // so collect every visible text in document order instead.
   const el = elements[id];
   if (!el) return [];
+  if (id === "audit-list") {
+    return el.children.map((trace) => {
+      const parts = [];
+      (function walk(n) {
+        if (n._text) parts.push(n._text);
+        (n.children || []).forEach(walk);
+      })(trace);
+      return parts;
+    });
+  }
   return el.children.map((row) => {
     const parts = [];
     row.children.forEach((c) => {
