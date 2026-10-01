@@ -1180,6 +1180,22 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 }
 .nexus-signal.up::after { left: calc(100% - 5px); background: var(--ok); box-shadow: 0 0 10px var(--aura-ok); }
 .nexus-signal.down::after { left: calc(100% - 5px); background: var(--err); box-shadow: 0 0 10px var(--aura-err); }
+/* querying: the instrument is mid-measurement (real pending state).
+   The dot scans — the machine is working, not decorating. */
+.nexus-signal.querying::after {
+  background: var(--accent); box-shadow: 0 0 10px var(--aura-accent);
+  animation: sigScan 1.15s var(--ease-in-out) infinite;
+}
+@keyframes sigScan {
+  0% { left: 0; } 50% { left: calc(100% - 5px); } 100% { left: 0; }
+}
+/* RX tick: every assistant message arrives with a transient signal at
+   its leading edge — the event of the system answering, made visible.
+   TX was the transmitPulse on send; this is its pair. */
+.msg.assistant .sig-tick {
+  display: inline-block; margin-right: 0.7rem; vertical-align: baseline;
+  color: var(--accent);
+}
 /* legacy ring hooks: the JS toggles .up/.down on #nexus-ring — keep the
    IDs working, render nothing circular */
 .nexus-ring { display: none; }
@@ -2372,10 +2388,18 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     return sigGlyph("queued", "", false);
   }
 
+  // memory kinds → geometry. Real MemoryKind values (fact | preference |
+  // project_note), each with a stable mark. The archive reads as a catalog.
+  function memoryGlyph(kind) {
+    if (kind === "fact") { return sigGlyph("queued", "info", false); }
+    if (kind === "preference") { return sigGlyph("waiting", "accent", false); }
+    if (kind === "project_note") { return sigGlyph("done", "ok", false); }
+    return sigGlyph("queued", "", false);
+  }
+
   // Transmission pulse: on send, energy is released — a pulse travels
   // from the composer to the orb (real cause → effect). WAAPI, GPU-safe.
-  function transmitPulse() {
-    if (S.reducedMotion) { return; }
+  function transmitPulse() {    if (S.reducedMotion) { return; }
     var from = $("composer"), to = $("orb-wrap");
     if (!from || !to || !document.body) { return; }
     var fr = from.getBoundingClientRect(), tr = to.getBoundingClientRect();
@@ -2400,6 +2424,20 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       }
     }
     if (dot.parentNode) { dot.parentNode.removeChild(dot); }
+  }
+
+  // signalTick: a transient event marker born on a real event. The tick
+  // lives its 1.6s life, then removes itself — no residue, no fake state.
+  function signalTick(host, color) {
+    if (S.reducedMotion || !host) { return; }
+    var tick = document.createElement("span");
+    tick.className = "sig-tick";
+    tick.setAttribute("aria-hidden", "true");
+    if (color) { try { tick.style.color = color; } catch (e) { /* ignore */ } }
+    host.insertBefore(tick, host.firstChild);
+    tick.addEventListener("animationend", function () {
+      if (tick.parentNode) { tick.parentNode.removeChild(tick); }
+    });
   }
 
   function stagger(row, i, step) {
@@ -2430,6 +2468,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         var row = document.createElement("div");
         row.className = "row clickable";
         row.setAttribute("tabindex", "0");
+        // hidden complexity: the full identity is one hover away
+        row.title = "Abrir sessão " + s.id;
         var main = document.createElement("div");
         main.className = "r-main";
         var title = document.createElement("div");
@@ -2576,6 +2616,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       items.forEach(function (m, i) {
         var row = document.createElement("div");
         row.className = "row";
+        // hidden complexity: kind + provenance one hover away
+        row.title = (m.kind || "memory") + " · não verificada";
         var main = document.createElement("div");
         main.className = "r-main";
         var title = document.createElement("div");
@@ -2592,6 +2634,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         side.className = "r-side";
         side.appendChild(badge(m.kind || "memory", "info"));
         row.appendChild(side);
+        // knowledge instrument: each kind gets its own geometric mark —
+        // a consistent visual encoding of a real MemoryKind.
+        side.insertBefore(memoryGlyph(m.kind), side.firstChild);
         stagger(row, i);
         list.appendChild(row);
       });
@@ -2633,6 +2678,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         var key = ev.id || (String(ev.occurred_at) + "|" + String(ev.event_type));
         var isNew = S.activityLoaded && !S.activitySeen[key];
         S.activitySeen[key] = 1;
+        // hidden complexity: the correlation id surfaces on hover
+        if (ev.correlation_id) { row.title = "correlação " + ev.correlation_id; }
         var dot = document.createElement("span");
         dot.className = "ev-dot";
         if (dot.style) { dot.style.background = outcomeColor(ev.outcome); dot.style.color = outcomeColor(ev.outcome); }
@@ -2735,8 +2782,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     }
     var sig = $("nexus-signal");
     if (sig && sig.classList) {
-      sig.classList.remove("up", "down");
-      if (st === "up") { sig.classList.add("up"); }
+      sig.classList.remove("up", "down", "querying");
+      // querying is a REAL pending state (S.nexusPending) — the instrument
+      // shows mid-measurement, not a guess.
+      if (S.nexusPending) { sig.classList.add("querying"); }
+      else if (st === "up") { sig.classList.add("up"); }
       else if (st === "down") { sig.classList.add("down"); }
     }
     if (text) {
@@ -2817,6 +2867,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     var div = document.createElement("div");
     div.className = "msg " + role;
     div.textContent = text;
+    // RX: the system's answer arrives as an event — a transient signal
+    // tick at the message's leading edge (pairs with transmitPulse/TX).
+    if (role === "assistant") { signalTick(div, "var(--accent)"); }
     if (meta) {
       var m = document.createElement("div");
       m.className = "meta";
