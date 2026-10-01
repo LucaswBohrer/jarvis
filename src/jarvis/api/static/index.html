@@ -1667,7 +1667,7 @@ body::after {
           <span class="cmd-label">Command</span>
           <span class="cmd-channel">ch · local</span>
         </div>
-        <form id="composer" aria-label="Superfície de comando">
+        <form id="composer" aria-label="Superfície de comando" data-surface="idle">
           <span class="cmd-prompt" aria-hidden="true">›</span>
           <textarea id="input" rows="1" maxlength="2000" placeholder="Ask JARVIS anything…" aria-label="Mensagem"></textarea>
           <button id="send" type="submit" aria-label="Enviar mensagem" title="Enviar (Enter)">↑</button>
@@ -1887,7 +1887,7 @@ body::after {
 
   // ---------- application state (backend -> app -> UI -> visual) ----------
   var S = {
-    uiState: "IDLE",      // IDLE | PROCESSING | COMPLETED | ERROR | CANCELLED
+    uiState: "IDLE",      // IDLE | TRANSMITTING | PROCESSING | COMPLETED | ERROR | CANCELLED
     sessionId: null,
     inFlight: null,       // AbortController for the current send, if any
     view: "home",
@@ -1955,6 +1955,7 @@ body::after {
     var state = "standby";
     var audioLevel = 0;       // reserved for future voice input
     var pulseStart = -1;      // timestamp of the last directional ring
+    var drawingStill = false; // drawOnce() must not expire a live ring
     var ringDir = 1;          // 1 = outward (transmit/complete), -1 = inward (receive)
     var energy = 0.14, energyTarget = 0.14;
     var churn = 1;            // processing: internal flows accelerate
@@ -2192,9 +2193,12 @@ body::after {
           ctx.strokeStyle = "hsla(" + pal.h2 + ",95%,72%," + (0.5 * (1 - age)).toFixed(3) + ")";
           ctx.lineWidth = 2;
           ctx.stroke();
-        } else {
+        } else if (!drawingStill) {
+          // The ring is a visual echo, not a state: its end never moves
+          // the orb. State transitions belong to setUiState's real timers
+          // (COMPLETED -> IDLE). A still frame must not expire a ring the
+          // live loop is still drawing.
           pulseStart = -1;
-          if (state === "complete") { setState("standby"); }
         }
       }
 
@@ -2204,7 +2208,9 @@ body::after {
     function drawOnce() {
       if (!ctx) { return; }
       energy = energyTarget + attention * 0.16; boost = 0; kick = 0;
-      draw(8000); // fixed timestamp: a calm, representative still frame
+      drawingStill = true;
+      try { draw(8000); } // fixed timestamp: a calm, representative still frame
+      finally { drawingStill = false; }
     }
 
     // Composer focus -> the orb lifts its energy slightly. Real interaction,
@@ -2577,7 +2583,7 @@ body::after {
       if (c && c.setAttribute) { c.setAttribute("data-surface", s); }
       current = s;
     }
-    function current() { return current; }
+    function getCurrent() { return current; }
     function quietSet(s) {
       if (!QUIET[current]) { return; }
       set(s);
@@ -2601,7 +2607,7 @@ body::after {
         if (cz && cz.classList) { cz.classList.toggle("typing", has); }
       });
     }
-    return { set: set, current: current, start: start };
+    return { set: set, current: getCurrent, start: start };
   })();
 
   // ---------- cursor field ----------
@@ -2717,13 +2723,15 @@ body::after {
   })();
 
   // ---------- UI state machine (UI-level; mirrors real backend outcomes) ----------
-  // IDLE: nothing in flight. PROCESSING: a send is in flight (real).
+  // IDLE: nothing in flight. TRANSMITTING: dispatch in flight (real, <0.5s).
+  // PROCESSING: a send is in flight (real).
   // COMPLETED: last send resolved ok (pulse, then back to IDLE).
   // ERROR: last send failed (real). CANCELLED: user aborted a send (real).
   function setUiState(next) {
     S.uiState = next;
     var mood = "idle";
-    if (next === "PROCESSING") { Orb.setState("processing"); mood = "processing"; }
+    if (next === "TRANSMITTING") { Orb.setState("transmitting"); mood = "interact"; }
+    else if (next === "PROCESSING") { Orb.setState("processing"); mood = "processing"; }
     else if (next === "COMPLETED") { Orb.setState("complete"); mood = "complete"; }
     else if (next === "ERROR") { Orb.setState("error"); mood = "error"; }
     else { Orb.setState("standby"); } // IDLE and CANCELLED settle back
@@ -3745,7 +3753,9 @@ body::after {
     if (S.inFlight || !text) { return; }
     // TRANSMITTING: the dispatch is its own visible moment — energy
     // concentrates, packets leave the surface, then processing begins.
-    Orb.setState("transmitting");
+    // A real UI state (not just an orb call) so focus/blur handlers know
+    // work has started and never clobber it.
+    setUiState("TRANSMITTING");
     Orb.pulse(); // contraction kick: the orb "takes a breath" on dispatch
     transmitPulse(); // energy released: composer → orb (real cause → effect)
     Sound.play("dispatch");
@@ -3766,7 +3776,7 @@ body::after {
     S.inFlight = controller;
     if (typeof setTimeout === "function") {
       setTimeout(function () {
-        if (S.inFlight) { setUiState("PROCESSING"); Surface.set("processing"); }
+        if (S.inFlight && S.uiState === "TRANSMITTING") { setUiState("PROCESSING"); Surface.set("processing"); }
       }, 450); // the transmission moment breathes before work begins
     } else { setUiState("PROCESSING"); Surface.set("processing"); }
 
