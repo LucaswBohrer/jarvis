@@ -873,6 +873,78 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
 }
+/* ============================================================
+   SIGNAL LANGUAGE — proprietary telemetry marks.
+   Not badges, not icons from a library: tiny geometric signals
+   drawn in SVG/CSS, each bound to a REAL system state or event.
+   - .micro: the system voice for labels (mono, tracked, whisper)
+   - .sig-glyph: state as geometry (11px SVG, currentColor)
+   - .sig-tick: a transient event marker (born on real events)
+   - .lifecycle: 3-segment process indicator (queued→active→done)
+   - .tx-pulse: transmission energy (composer → orb on send)
+   Color is the event; geometry is the instrument. Nothing here
+   renders without a real state behind it.
+   ============================================================ */
+.micro {
+  font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--whisper);
+  white-space: nowrap;
+}
+.sig-glyph {
+  width: 11px; height: 11px; flex: none; display: inline-block;
+  vertical-align: -1px; color: var(--muted);
+}
+.sig-glyph.ok { color: var(--ok); }
+.sig-glyph.err { color: var(--err); }
+.sig-glyph.warn { color: var(--warn); }
+.sig-glyph.info { color: var(--info); }
+.sig-glyph.accent { color: var(--accent); }
+/* live glyphs breathe — the breath IS the state (running, not decoration) */
+.sig-glyph.live { animation: sig-breathe 1.8s ease-in-out infinite; }
+@keyframes sig-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+/* transient event tick: born on a real event, dissipates */
+.sig-tick {
+  width: 2px; height: 14px; flex: none;
+  background: currentColor; border-radius: 1px;
+  animation: tick-life 1.6s var(--ease-out) both;
+}
+@keyframes tick-life {
+  0% { opacity: 0; transform: scaleY(0.2); }
+  18% { opacity: 1; transform: scaleY(1); }
+  70% { opacity: 0.9; }
+  100% { opacity: 0; transform: scaleY(0.6); }
+}
+/* lifecycle: three segments, filled by real process state.
+   [queued][active][terminal] — the machine's own progress dialect. */
+.lifecycle {
+  display: inline-flex; align-items: center; gap: 3px;
+  flex: none;
+}
+.lifecycle i {
+  width: 14px; height: 3px; border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background var(--d-med), box-shadow var(--d-med);
+}
+.lifecycle i.on { background: currentColor; }
+.lifecycle i.on-glow { box-shadow: 0 0 8px currentColor; }
+/* transmission pulse: energy released on send, composer → orb */
+.tx-pulse {
+  position: fixed; z-index: 60; pointer-events: none;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 14px var(--aura-accent);
+  margin: -3px 0 0 -3px;
+}
+/* directional marker: hidden until interaction reveals it */
+.dir-marker {
+  font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent);
+  opacity: 0; transform: translateX(-6px);
+  transition: opacity var(--d-fast), transform var(--d-fast) var(--ease-out);
+  flex: none;
+}
+.row.clickable:hover .dir-marker,
+.row.clickable:focus-visible .dir-marker { opacity: 1; transform: none; }
+/* index language */
+.list { display: flex; flex-direction: column; counter-reset: jrow; }
 /* ledgers and instrument groups enter as composed units */
 .view:not([hidden]) .ledger { animation: ledgerRise var(--d-slow) var(--ease-out) both; }
 .view:not([hidden]) .ledger:nth-of-type(2) { animation-delay: 80ms; }
@@ -1989,6 +2061,108 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     return b;
   }
 
+  // ---------- signal language (JS) ----------
+  // State as geometry: tiny inline SVGs, currentColor-driven. Each shape
+  // maps to a REAL backend state — never decorative.
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function sigGlyph(kind, cls, live) {
+    var svg = document.createElementNS(SVGNS, "svg");
+    svg.setAttribute("viewBox", "0 0 10 10");
+    svg.setAttribute("class", "sig-glyph" + (cls ? " " + cls : "") + (live ? " live" : ""));
+    svg.setAttribute("aria-hidden", "true");
+    var el;
+    if (kind === "queued" || kind === "pending") {
+      el = document.createElementNS(SVGNS, "rect");
+      el.setAttribute("x", "2.5"); el.setAttribute("y", "2.5");
+      el.setAttribute("width", "5"); el.setAttribute("height", "5");
+      el.setAttribute("fill", "none"); el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "1.2");
+    } else if (kind === "running") {
+      el = document.createElementNS(SVGNS, "circle");
+      el.setAttribute("cx", "5"); el.setAttribute("cy", "5"); el.setAttribute("r", "3");
+      el.setAttribute("fill", "currentColor");
+    } else if (kind === "done") {
+      el = document.createElementNS(SVGNS, "path");
+      el.setAttribute("d", "M2 5.4 L4.4 7.8 L8 2.6");
+      el.setAttribute("fill", "none"); el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "1.4"); el.setAttribute("stroke-linecap", "round");
+      el.setAttribute("stroke-linejoin", "round");
+    } else if (kind === "failed") {
+      el = document.createElementNS(SVGNS, "path");
+      el.setAttribute("d", "M3 3 L7 7 M7 3 L3 7");
+      el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "1.4"); el.setAttribute("stroke-linecap", "round");
+    } else { // waiting / cancelled / unknown: hollow dashed circle
+      el = document.createElementNS(SVGNS, "circle");
+      el.setAttribute("cx", "5"); el.setAttribute("cy", "5"); el.setAttribute("r", "3.2");
+      el.setAttribute("fill", "none"); el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "1.1"); el.setAttribute("stroke-dasharray", "2 1.6");
+    }
+    svg.appendChild(el);
+    return svg;
+  }
+
+  // Task lifecycle: [queued][active][terminal] segments from real state.
+  // Returns {el, colorCls} — the row decides placement.
+  function lifecycle(state) {
+    var wrap = document.createElement("span");
+    wrap.className = "lifecycle";
+    var stage = 0, colorCls = "", live = false;
+    if (state === "pending" || state === "planning") { stage = 1; }
+    else if (state === "running" || state === "waiting_confirmation") { stage = 2; live = true; colorCls = "accent"; }
+    else if (state === "completed") { stage = 3; colorCls = "ok"; }
+    else if (state === "failed") { stage = 3; colorCls = "err"; }
+    else if (state === "cancelled") { stage = 3; colorCls = "warn"; }
+    if (colorCls) { wrap.style.color = "var(--" + colorCls + ")"; }
+    for (var i = 1; i <= 3; i++) {
+      var s = document.createElement("i");
+      if (i <= stage) {
+        s.className = "on" + (live && i === stage ? " on-glow" : "");
+      }
+      wrap.appendChild(s);
+    }
+    if (live) { wrap.classList.add("live"); }
+    return wrap;
+  }
+  function glyphForTaskState(state) {
+    if (state === "completed") { return sigGlyph("done", "ok", false); }
+    if (state === "failed") { return sigGlyph("failed", "err", false); }
+    if (state === "cancelled") { return sigGlyph("waiting", "warn", false); }
+    if (state === "running" || state === "waiting_confirmation") { return sigGlyph("running", "accent", true); }
+    if (state === "planning") { return sigGlyph("running", "info", true); }
+    return sigGlyph("queued", "", false);
+  }
+
+  // Transmission pulse: on send, energy is released — a pulse travels
+  // from the composer to the orb (real cause → effect). WAAPI, GPU-safe.
+  function transmitPulse() {
+    if (S.reducedMotion) { return; }
+    var from = $("composer"), to = $("orb-wrap");
+    if (!from || !to || !document.body) { return; }
+    var fr = from.getBoundingClientRect(), tr = to.getBoundingClientRect();
+    if (!fr.width || !tr.width) { return; }
+    var dot = document.createElement("span");
+    dot.className = "tx-pulse";
+    dot.setAttribute("aria-hidden", "true");
+    dot.style.left = (fr.left + fr.width / 2) + "px";
+    dot.style.top = (fr.top + 8) + "px";
+    document.body.appendChild(dot);
+    var dx = (tr.left + tr.width / 2) - (fr.left + fr.width / 2);
+    var dy = (tr.top + tr.height * 0.55) - (fr.top + 8);
+    if (typeof dot.animate === "function") {
+      var anim = dot.animate([
+        { transform: "translate(0, 0) scale(1)", opacity: 0.95 },
+        { transform: "translate(" + (dx * 0.5) + "px," + (dy * 0.62) + "px) scale(0.65)", opacity: 0.55, offset: 0.62 },
+        { transform: "translate(" + dx + "px," + dy + "px) scale(0.15)", opacity: 0 }
+      ], { duration: 680, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+      if (anim) {
+        anim.onfinish = function () { if (dot.parentNode) { dot.parentNode.removeChild(dot); } };
+        return;
+      }
+    }
+    if (dot.parentNode) { dot.parentNode.removeChild(dot); }
+  }
+
   function stagger(row, i, step) {
     if (row && row.style && !S.reducedMotion) {
       var d = i * (step || 40);
@@ -2034,6 +2208,13 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
           side.appendChild(badge("atual", "accent"));
         }
         else { side.appendChild(badge(s.status, s.status === "active" ? "ok" : "")); }
+        // Hidden complexity: the directional marker only appears on
+        // hover/focus — the row reveals it can be entered.
+        var dir = document.createElement("span");
+        dir.className = "dir-marker";
+        dir.setAttribute("aria-hidden", "true");
+        dir.textContent = "→";
+        side.appendChild(dir);
         row.appendChild(side);
         stagger(row, i);
         var open = function () { switchSession(s.id); };
@@ -2108,6 +2289,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         row.appendChild(main);
         var side = document.createElement("div");
         side.className = "r-side";
+        // Signal language: lifecycle segments (real process state) +
+        // state glyph, then the typographic state. The transformation
+        // queued → active → terminal is geometry, not just text.
+        side.appendChild(lifecycle(t.state));
+        side.appendChild(glyphForTaskState(t.state));
         var tb = badge(t.state, TASK_BADGE[t.state] || "");
         // Non-terminal states pulse: the pulse reflects the real task state.
         if (["running", "planning", "pending", "waiting_confirmation"].indexOf(t.state) >= 0) {
@@ -2460,6 +2646,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     if (S.inFlight || !text) { return; }
     setUiState("PROCESSING");
     Orb.pulse(); // contraction kick: the orb "takes a breath" on dispatch
+    transmitPulse(); // energy released: composer → orb (real cause → effect)
     setState("processando…");
     setBusy(true);
 
