@@ -957,6 +957,33 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 }
 .row.clickable:hover .dir-marker,
 .row.clickable:focus-visible .dir-marker { opacity: 1; transform: none; }
+/* ============================================================
+   DATA ALIVE — state changes are events, not text swaps.
+   - .state-changed: a task crossed a lifecycle boundary (real diff)
+   - .born: a new event crosses the spine into the timeline
+   - .swap: a changed value slips into place (numbers have behavior)
+   ============================================================ */
+.row.state-changed { animation: stateChange 1.4s var(--ease-out) both; }
+@keyframes stateChange {
+  0% { background: rgba(63, 224, 195, 0.13); }
+  100% { background: transparent; }
+}
+.row.born { animation: born var(--d-med) var(--ease-out) both; }
+@keyframes born {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: none; }
+}
+.row.born .ev-dot { animation: dotBirth 1s var(--ease-out) both; }
+@keyframes dotBirth {
+  0% { transform: scale(0); }
+  55% { transform: scale(1.7); }
+  100% { transform: scale(1); }
+}
+.swap { display: inline-block; animation: morphSwap 0.34s var(--ease-out) both; }
+@keyframes morphSwap {
+  0% { opacity: 0; transform: translateY(7px); filter: blur(2px); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
 /* index language */
 .list { display: flex; flex-direction: column; counter-reset: jrow; }
 /* ledgers and instrument groups enter as composed units */
@@ -1481,6 +1508,19 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     if (el) { el.textContent = text; }
   }
 
+  // morphText: a changed value slips into place — numbers have behavior.
+  // Only fires on real change; no-op otherwise.
+  function morphText(id, text) {
+    var el = $(id);
+    var s = String(text);
+    if (!el || el.textContent === s) { return; }
+    el.textContent = s;
+    if (S.reducedMotion || !el.classList) { return; }
+    el.classList.remove("swap");
+    void el.offsetWidth;
+    el.classList.add("swap");
+  }
+
   function setDot(id, cls) {
     var el = $(id);
     if (el) { el.className = "dot" + (cls ? " " + cls : ""); }
@@ -1546,7 +1586,12 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     nexus: { state: "unknown", rawStatus: null, text: null, at: null, source: null, factIds: [], observedAt: null }, // unknown | up | down; rawStatus is the real ResponseStatus from the backend
     nexusPending: false,
     reducedMotion: false,
-    booted: false
+    booted: false,
+    // data-alive memory: previous states, so real changes can animate
+    taskStates: {},        // taskId -> last seen state
+    tasksLoaded: false,
+    activitySeen: {},      // event key -> 1
+    activityLoaded: false
   };
 
   // ---------- motion preference ----------
@@ -2327,7 +2372,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     var home = $("view-home");
     if (home && home.classList) { home.classList.remove("has-thread"); }
     S.turns = 0;
-    setText("panel-turns", "0");
+    morphText("panel-turns", "0");
     updateHomeStatus();
     loadHistory(id);
     go("home");
@@ -2361,6 +2406,12 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       items.forEach(function (t, i) {
         var row = document.createElement("div");
         row.className = "row";
+        // data alive: diff against the last seen state. A task that
+        // crossed a lifecycle boundary gets the transformation sweep
+        // instead of the calm entrance — the change IS the event.
+        var prev = S.taskStates[t.id];
+        var changed = S.tasksLoaded && prev !== undefined && prev !== t.state;
+        S.taskStates[t.id] = t.state;
         var main = document.createElement("div");
         main.className = "r-main";
         var title = document.createElement("div");
@@ -2393,9 +2444,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         idv.className = "r-meta mono";
         idv.textContent = shortId(t.id);
         row.appendChild(idv);
-        stagger(row, i);
+        if (changed) { row.classList.add("state-changed"); }
+        else { stagger(row, i); }
         list.appendChild(row);
       });
+      S.tasksLoaded = true;
     }).catch(function () {
       done();
       list.appendChild(emptyRow("Não foi possível carregar as tarefas."));
@@ -2469,6 +2522,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       items.forEach(function (ev, i) {
         var row = document.createElement("div");
         row.className = "row";
+        // data alive: an event never seen before is BORN — it crosses
+        // the spine into the timeline. Seen events enter calmly.
+        var key = ev.id || (String(ev.occurred_at) + "|" + String(ev.event_type));
+        var isNew = S.activityLoaded && !S.activitySeen[key];
+        S.activitySeen[key] = 1;
         var dot = document.createElement("span");
         dot.className = "ev-dot";
         if (dot.style) { dot.style.background = outcomeColor(ev.outcome); dot.style.color = outcomeColor(ev.outcome); }
@@ -2480,9 +2538,11 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         type.textContent = ev.event_type || "";
         row.appendChild(dot); row.appendChild(time); row.appendChild(type);
         row.appendChild(badge(ev.outcome || "", outcomeBadge(ev.outcome)));
-        stagger(row, i, 25);
+        if (isNew) { row.classList.add("born"); }
+        else { stagger(row, i, 25); }
         list.appendChild(row);
       });
+      S.activityLoaded = true;
     }).catch(function () {
       done();
       list.appendChild(emptyRow("Não foi possível carregar a atividade."));
@@ -2725,7 +2785,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 
   function afterTurn(ok) {
     S.turns += 1;
-    setText("panel-turns", String(S.turns));
+    morphText("panel-turns", String(S.turns));
     updateHomeStatus();
     loadMemories();
   }
@@ -2888,7 +2948,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       if (!data) { return; }
       var items = (data && data.messages) || [];
       S.turns = Math.floor(items.length / 2);
-      setText("panel-turns", String(S.turns));
+      morphText("panel-turns", String(S.turns));
       updateHomeStatus();
       if (!items.length) {
         var ph = bubble("system", "Nenhuma mensagem ainda.");
@@ -3009,12 +3069,24 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   }
 
   // ---------- clock & greeting ----------
+  var lastClockMinute = -1;
   function tickClock() {
     var el = $("clock");
     if (!el) { return; }
     var d = new Date();
     var p = function (n) { return (n < 10 ? "0" : "") + n; };
-    el.textContent = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+    var txt = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+    if (el.textContent === txt) { return; }
+    el.textContent = txt;
+    // the instrument ticks: a new minute slips into place
+    if (d.getMinutes() !== lastClockMinute) {
+      lastClockMinute = d.getMinutes();
+      if (!S.reducedMotion && el.classList) {
+        el.classList.remove("swap");
+        void el.offsetWidth;
+        el.classList.add("swap");
+      }
+    }
   }
 
   function setGreeting() {
