@@ -391,9 +391,22 @@ body:has(#view-home:not([hidden])) #syspanel { display: flex; }
 #syspanel .kv .k { color: var(--whisper); font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em; }
 #syspanel .kv .v { color: var(--muted); font-size: 0.74rem; }
 /* .panel-card: retired with the dashboard era (no usages remain) */
-.kv { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; font-size: 0.82rem; padding: 0.22rem 0; }
-.kv .k { color: var(--faint); }
-.kv .v { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text); text-align: right; word-break: break-all; }
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 0.88rem; padding: 0.45rem 0; border-bottom: 1px solid var(--hairline); }
+.kv .k { color: var(--whisper); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.kv .v { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); text-align: right; word-break: break-all; font-variant-numeric: tabular-nums; }
+/* ledger: a control group — title + ruled readouts, no container.
+   Groups separated by space; the hairline rules do the structuring. */
+.ledger { margin: 0 0 3rem; max-width: 640px; }
+.ledger-title {
+  display: flex; align-items: baseline; gap: 0.9rem;
+  font-size: 0.95rem; font-weight: 500; letter-spacing: 0.04em;
+  margin: 0 0 0.8rem; color: var(--text);
+}
+.ledger-index {
+  font-family: var(--font-mono); font-size: 0.64rem; color: var(--whisper);
+  letter-spacing: 0.08em; font-variant-numeric: tabular-nums;
+}
+.ledger .note { margin-top: 0.9rem; }
 .status-line { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; }
 
 /* ============================================================
@@ -823,73 +836,95 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 .toolbar .btn-ghost:hover:not(:disabled)::after, .toolbar .btn:hover:not(:disabled)::after { right: 0; }
 .toolbar .btn { color: var(--accent-dim); }
 .toolbar .btn:hover:not(:disabled) { color: var(--accent); }
+/* ============================================================
+   INDEX LANGUAGE — internal views are indexes, not tables.
+   Rows are entries in a ledger: number, voice, metadata, state.
+   Grouping through alignment and space. Hover is a brightening
+   of the entry (text + index), never a fill. The only motion is
+   a 4px lateral shift on clickable entries.
+   ============================================================ */
 .list { display: flex; flex-direction: column; counter-reset: jrow; }
 .row {
   border-bottom: 1px solid var(--hairline);
-  padding: 0.6rem 0.75rem;
-  display: flex; align-items: center; gap: 0.9rem;
-  transition: background var(--d-fast), border-color var(--d-fast), transform var(--d-fast);
+  padding: 1.05rem 0.2rem;
+  display: flex; align-items: baseline; gap: 1.2rem;
+  transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-out);
   animation: rise var(--d-med) var(--ease-out) both;
   position: relative;
-  border-radius: 6px;
+  border-radius: 0;
+  background: none;
 }
 /* instrument index column */
 .row::before {
   counter-increment: jrow;
   content: counter(jrow, decimal-leading-zero);
-  font-family: var(--font-mono); font-size: 0.64rem; color: var(--faint);
+  font-family: var(--font-mono); font-size: 0.64rem; color: var(--whisper);
   letter-spacing: 0.06em; flex: none; width: 2em; text-align: right;
   font-variant-numeric: tabular-nums;
+  transition: color var(--d-fast);
 }
-.row:hover { background: rgba(255, 255, 255, 0.035); }
-.row:hover::before { color: var(--muted); }
+.row:hover { background: none; border-bottom-color: rgba(255, 255, 255, 0.1); }
+.row:hover::before { color: var(--accent-dim); }
 .row.clickable { cursor: pointer; }
-.row.clickable:hover { transform: translateX(3px); background: rgba(63, 224, 195, 0.05); }
-.row .r-title { font-size: 0.9rem; }
-.row .r-meta { font-size: 0.7rem; color: var(--faint); font-family: var(--font-mono); margin-top: 0.15rem; }
+.row.clickable:hover { transform: translateX(4px); }
+.row .r-title { font-size: 0.95rem; color: var(--text); font-weight: 400; transition: color var(--d-fast); }
+.row .r-meta { font-size: 0.68rem; color: var(--whisper); font-family: var(--font-mono); margin-top: 0.3rem; letter-spacing: 0.06em; }
 .row .r-main { flex: 1; min-width: 0; }
 .row .r-side { flex: none; display: flex; align-items: center; gap: 0.5rem; }
-/* badges: instrument tags, not pills — chamfered corner, mono, tracked */
+/* states: typographic, not tags. A dot + tracked mono — color is
+   the event, the dot is the instrument. No borders, no fills. */
 .badge {
-  font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 0.24rem 0.6rem; border-radius: 2px;
-  border: 1px solid var(--border); color: var(--muted);
+  font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.16em; text-transform: uppercase;
+  padding: 0; border: none; border-radius: 0; background: none;
+  color: var(--muted);
   white-space: nowrap;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+  clip-path: none;
+  display: inline-flex; align-items: center; gap: 0.55rem;
 }
-.badge.ok { color: var(--ok); border-color: rgba(63, 185, 80, 0.4); background: rgba(63, 185, 80, 0.08); }
-.badge.warn { color: var(--warn); border-color: rgba(210, 153, 34, 0.4); background: rgba(210, 153, 34, 0.08); }
-.badge.err { color: var(--err); border-color: rgba(248, 81, 73, 0.4); background: rgba(248, 81, 73, 0.08); }
-.badge.info { color: var(--info); border-color: rgba(88, 166, 255, 0.4); background: rgba(88, 166, 255, 0.08); }
-.badge.accent { color: var(--accent); border-color: rgba(63, 224, 195, 0.4); background: var(--accent-soft); }
-/* current session: 2px teal left border + 3% fill */
-.row.is-current { border-left: 2px solid var(--accent); background: rgba(63, 224, 195, 0.03); padding-left: calc(0.75rem - 2px); }
-/* TASK MONITOR: the row's left edge carries the task's real status color */
-#task-list .row:has(.badge.ok) { border-left: 2px solid rgba(63, 185, 80, 0.6); }
-#task-list .row:has(.badge.err) { border-left: 2px solid rgba(248, 81, 73, 0.6); }
-#task-list .row:has(.badge.warn) { border-left: 2px solid rgba(210, 153, 34, 0.6); }
-#task-list .row:has(.badge.accent) { border-left: 2px solid rgba(63, 224, 195, 0.6); }
-#task-list .row:has(.badge.info) { border-left: 2px solid rgba(88, 166, 255, 0.6); }
-/* empty state: instrument at rest — hairline frame, glyph, honest line */
+.badge::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor; flex: none;
+}
+.badge.ok { color: var(--ok); }
+.badge.ok::before { box-shadow: 0 0 6px var(--aura-ok); }
+.badge.warn { color: var(--warn); }
+.badge.warn::before { box-shadow: 0 0 6px var(--aura-warn); }
+.badge.err { color: var(--err); }
+.badge.err::before { box-shadow: 0 0 6px var(--aura-err); }
+.badge.info { color: var(--info); }
+.badge.info::before { box-shadow: 0 0 6px rgba(88, 166, 255, 0.35); }
+.badge.accent { color: var(--accent); }
+.badge.accent::before { box-shadow: 0 0 6px var(--aura-accent); animation: pulse-dot 2s ease-in-out infinite; }
+/* current session: the entry speaks — title brightens, index lights */
+.row.is-current .r-title { color: var(--accent); }
+.row.is-current::before { color: var(--accent); }
+/* task monitor: status edge retired — the state's own voice carries it */
+#task-list .row:has(.badge.ok),
+#task-list .row:has(.badge.err),
+#task-list .row:has(.badge.warn),
+#task-list .row:has(.badge.accent),
+#task-list .row:has(.badge.info) { border-left: none; }
+/* empty state: the instrument at rest — no frame, just voice */
 .empty {
-  color: var(--faint); font-size: 0.9rem;
-  padding: 2.6rem 1.6rem; text-align: center;
-  border: 1px solid var(--hairline); border-radius: var(--radius);
-  background: rgba(7, 11, 18, 0.4);
-  display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+  color: var(--whisper); font-size: 0.92rem; font-weight: 300;
+  padding: 4rem 1.6rem; text-align: center;
+  border: none; border-radius: 0; background: none;
+  display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
 }
 .empty .e-glyph {
-  font-size: 1.5rem; color: var(--border); line-height: 1;
-  -webkit-text-stroke: 1px var(--faint);
+  font-size: 1.4rem; color: var(--whisper); line-height: 1;
+  -webkit-text-stroke: 0;
+  opacity: 0.7;
 }
-.empty .e-title { color: var(--muted); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.02em; }
-.empty .e-sub { font-size: 0.8rem; max-width: 36ch; font-family: var(--font-mono); }
+.empty .e-title { color: var(--muted); font-size: 0.95rem; font-weight: 400; letter-spacing: 0.02em; }
+.empty .e-sub { font-size: 0.78rem; max-width: 38ch; font-family: var(--font-mono); color: var(--whisper); }
 .note { color: var(--faint); font-size: 0.8rem; }
 
-/* skeleton loading rows — shimmer, inserted only after 200ms (anti-flicker) */
+/* skeleton loading rows — lines dissolving in, not boxes */
 .skel {
-  border-radius: 6px; height: 44px; margin: 0.35rem 0;
-  background: linear-gradient(100deg, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 70%);
+  border-radius: 0; height: 2.8rem; margin: 0.5rem 0;
+  border-bottom: 1px solid var(--hairline);
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%);
   background-size: 200% 100%;
   animation: skelShimmer 1.4s linear infinite;
 }
@@ -904,44 +939,101 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
 }
 .spot:hover::after { opacity: 1; }
 
-/* activity: LIVE SYSTEM STREAM — outcome dots glow with their real color */
-#activity-list .row { font-family: var(--font-mono); font-size: 0.78rem; }
-#activity-list .ev-time { color: var(--faint); flex: none; font-variant-numeric: tabular-nums; }
+/* ---------- per-view compositions ----------
+   Same index language, different temperament per view. */
+
+/* SESSIONS: a calm index of conversations — generous, unhurried */
+#view-sessions .list { max-width: 880px; }
+#view-sessions .row { padding: 1.3rem 0.2rem; }
+#view-sessions .row .r-title { font-size: 1.02rem; font-weight: 350; letter-spacing: 0.01em; }
+
+/* TASKS: the process monitor — denser, status-forward, technical */
+#view-tasks .list { max-width: 960px; }
+#view-tasks .row { padding: 0.85rem 0.2rem; align-items: center; }
+#view-tasks .row .r-title { font-family: var(--font-mono); font-size: 0.86rem; letter-spacing: 0.02em; }
+#view-tasks .row .r-meta { margin-top: 0.2rem; }
+
+/* MEMORY: the archive — entries as catalog records, airy, quiet */
+#view-memory .list { max-width: 820px; }
+#view-memory .row { padding: 1.2rem 0.2rem; border-left: none; }
+#view-memory .row:hover { border-left: none; }
+#view-memory .row .r-title { font-family: var(--font-sans); font-size: 0.98rem; font-weight: 350; line-height: 1.6; }
+#view-memory .row .r-meta { color: var(--whisper); }
+
+/* ACTIVITY: a timeline — events on a spine, not rows in a table */
+#activity-list { position: relative; max-width: 900px; }
+#activity-list::before {
+  content: ""; position: absolute; left: 2.2em; top: 1.4rem; bottom: 1.4rem;
+  width: 1px; background: var(--hairline);
+}
+#activity-list .row { margin-left: 3.4em; padding: 0.7rem 0.2rem; align-items: baseline; }
+#activity-list .row::before { display: none; } /* the spine replaces the index */
+#activity-list .row { font-family: var(--font-mono); font-size: 0.8rem; }
+#activity-list .ev-time { color: var(--whisper); flex: none; font-variant-numeric: tabular-nums; font-size: 0.72rem; }
 #activity-list .ev-type { color: var(--text); flex: 1; }
-#activity-list .ev-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: 0 0 8px currentColor; }
+#activity-list .ev-dot {
+  position: absolute; left: -3.4em; margin-left: calc(2.2em - 4px); top: 1.15rem;
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  box-shadow: 0 0 8px currentColor;
+  background: var(--bg); border: 1px solid currentColor;
+}
 
-/* memory: KNOWLEDGE LAYER — entries read as archived records, always
-   labeled "não verificada" by the loader (never measured facts) */
-#memory-list .row .r-title { font-family: var(--font-mono); font-size: 0.85rem; }
-#memory-list .row { border-left: 1px solid transparent; }
-#memory-list .row:hover { border-left-color: var(--border); }
-
-/* audit: EXECUTION TRACE — dense mono, keys dimmed, values carry outcome color */
-#audit-list .row { align-items: flex-start; }
+/* AUDIT: the execution trace — dense, mono, ledger-like.
+   Premium may be dense: this view earns its density. */
+#view-audit .list { max-width: none; }
+#view-audit .note { max-width: 90ch; margin-bottom: 1.5rem; }
+#audit-list .row { align-items: flex-start; padding: 0.55rem 0.2rem; }
+#audit-list .row::before { color: var(--whisper); }
 .audit-ev { font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.65; word-break: break-word; }
-.audit-ev .ak { color: var(--faint); }
+.audit-ev .ak { color: var(--whisper); }
 .audit-ev .av-ok { color: var(--ok); } .audit-ev .av-err { color: var(--err); }
 .audit-ev .av-warn { color: var(--warn); } .audit-ev .av-info { color: var(--info); }
 
-/* NEXUS view — instrument, not dashboard card */
-.nexus-hero { display: flex; align-items: center; gap: 1.2rem; }
-.nexus-ring {
-  position: relative; width: 64px; height: 64px; flex: none;
-  display: inline-flex; align-items: center; justify-content: center;
+/* NEXUS view — an instrument, not a dashboard card, and never a mini-orb.
+   The state is carried by typography and a signal line. The orb alone
+   owns the circular plasma register. */
+/* NEXUS view — an instrument, not a dashboard card, and never a mini-orb.
+   The state is carried by typography and a signal line. The orb alone
+   owns the circular plasma register. */
+.nexus-hero {
+  display: flex; flex-direction: column; gap: 1.4rem;
+  padding: 2.5rem 0 2rem;
+  align-items: flex-start;
 }
-.nexus-ring::before {
-  content: ""; position: absolute; inset: 0; border-radius: 50%;
-  border: 2px dashed var(--border);
-  transition: border-color var(--d-med);
+.nexus-state {
+  font-size: clamp(2rem, 5vmin, 3.2rem);
+  font-weight: 250; letter-spacing: -0.02em; line-height: 1.1;
+  color: var(--text);
+  margin: 0;
 }
-.nexus-ring.up::before { border: 2px solid var(--ok); box-shadow: 0 0 18px rgba(63, 185, 80, 0.35); animation: ringSpin 14s linear infinite; }
-.nexus-ring.down::before { border: 2px solid var(--err); box-shadow: 0 0 18px rgba(248, 81, 73, 0.3); }
-@keyframes ringSpin { to { transform: rotate(360deg); } }
-.nexus-ring .dot { width: 12px; height: 12px; }
+.nexus-state.is-up { color: var(--ok); }
+.nexus-state.is-down { color: var(--err); }
+.nexus-signal {
+  width: min(420px, 100%); height: 1px; position: relative;
+  background: var(--hairline);
+}
+.nexus-signal::after {
+  content: ""; position: absolute; top: -2px; left: 0; width: 5px; height: 5px;
+  border-radius: 50%; background: var(--faint);
+  transition: left var(--d-slow) var(--ease-spatial), background var(--d-med), box-shadow var(--d-med);
+}
+.nexus-signal.up::after { left: calc(100% - 5px); background: var(--ok); box-shadow: 0 0 10px var(--aura-ok); }
+.nexus-signal.down::after { left: calc(100% - 5px); background: var(--err); box-shadow: 0 0 10px var(--aura-err); }
+/* legacy ring hooks: the JS toggles .up/.down on #nexus-ring — keep the
+   IDs working, render nothing circular */
+.nexus-ring { display: none; }
+.nexus-sub {
+  font-family: var(--font-mono); font-size: 0.66rem; font-weight: 400;
+  letter-spacing: 0.28em; text-transform: uppercase; color: var(--whisper);
+  margin: 2.5rem 0 0;
+}
 #nexus-last {
-  background: rgba(11, 18, 32, 0.55); border: 1px solid var(--hairline); border-radius: var(--radius);
-  padding: 0.9rem 1rem; white-space: pre-wrap; word-break: break-word; font-size: 0.9rem;
+  background: none; border: none; border-radius: 0;
+  border-top: 1px solid var(--hairline);
+  padding: 1.2rem 0; white-space: pre-wrap; word-break: break-word;
+  font-size: 0.92rem; font-weight: 300; line-height: 1.7; color: var(--muted);
   max-height: 320px; overflow-y: auto;
+  width: min(860px, 100%);
 }
 
 /* thinking: the instrument's "processing" readout — real state only */
@@ -964,22 +1056,12 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
    Budget: orb + composer + page entry + hover/focus feedback.
    ============================================================ */
 
-/* View transitions: one orchestrated moment per navigation.
-   Enter only (exit is cut by display:none); 280ms fade+rise. */
-.view:not([hidden]) { animation: viewEnter var(--d-page) var(--ease-out); }
-@keyframes viewEnter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* View transitions: the spatial state shift (viewIn) is the single
+   signature transition — defined once at the top of this file.
+   (dashboard-era viewEnter retired) */
 
-/* Activity: event-stream timeline (pure CSS, real events) */
-#activity-list { position: relative; }
-#activity-list::before {
-  content: ""; position: absolute; left: 5px; top: 10px; bottom: 10px;
-  width: 1px; background: var(--border);
-}
-#activity-list .row { margin-left: 1.1rem; }
-#activity-list .ev-dot {
-  position: absolute; left: -1.1rem; top: 50%; margin-top: -4px;
-  box-shadow: 0 0 8px currentColor;
-}
+/* Activity timeline spine: defined once with the per-view compositions above.
+   (dashboard-era duplicate rules retired) */
 
 /* Tasks: non-terminal states pulse — the pulse reflects the real
    task state, never an invented progress percentage. */
@@ -1195,17 +1277,13 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn" id="nexus-query" type="button">Consultar agora</button></div>
       </div>
-      <section class="sys-panel spot" aria-label="Instrumento NEXUS">
-        <div class="sp-head"><span class="sp-index">NX</span><span class="sp-title">Instrumento</span><span class="sp-pip" id="nexus-pip" aria-hidden="true"></span></div>
-        <div class="nexus-hero">
-          <span class="nexus-ring" id="nexus-ring"><span id="nexus-status-dot" class="dot" aria-hidden="true"></span></span>
-          <div>
-            <div class="status-line"><strong id="nexus-status-text">não consultado</strong></div>
-            <div class="note" id="nexus-note">O status só muda após uma consulta real. A UI nunca inventa estado.</div>
-          </div>
-        </div>
-      </section>
-      <h3 class="mono" style="font-size:0.72rem;letter-spacing:0.24em;color:var(--faint);margin:0.4rem 0 0;">ÚLTIMA RESPOSTA</h3>
+      <div class="nexus-hero">
+        <p class="nexus-state" id="nexus-state" aria-live="polite"><span id="nexus-status-text">não consultado</span></p>
+        <div class="nexus-signal" id="nexus-signal" aria-hidden="true"></div>
+        <p class="note" id="nexus-note">O status só muda após uma consulta real. A UI nunca inventa estado.</p>
+        <span id="nexus-ring" class="nexus-ring" aria-hidden="true"></span>
+      </div>
+      <h3 class="nexus-sub">Última resposta</h3>
       <div id="nexus-last"><span class="note">Nenhuma consulta nesta sessão.</span></div>
       <div id="nexus-prov" aria-label="Proveniência da resposta"></div>
     </section>
@@ -1213,30 +1291,30 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <!-- SYSTEM -->
     <section class="view" id="view-system" aria-label="Sistema" hidden>
       <div class="view-head"><span class="view-index">08</span><h2>SISTEMA</h2><span class="vh-sub">estado operacional</span></div>
-      <section class="sys-panel spot" aria-label="Backend">
-        <div class="sp-head"><span class="sp-index">01</span><span class="sp-title">Backend</span><span class="sp-pip on" aria-hidden="true"></span></div>
+      <div class="ledger" aria-label="Backend">
+        <h3 class="ledger-title"><span class="ledger-index">01</span>Backend</h3>
         <div class="kv"><span class="k">status</span><span class="v" id="sys-backend">—</span></div>
         <div class="kv"><span class="k">pronto</span><span class="v" id="sys-ready">—</span></div>
         <div class="kv"><span class="k">versão</span><span class="v" id="sys-version">—</span></div>
         <div class="kv"><span class="k">schema do banco</span><span class="v" id="sys-schema">—</span></div>
         <div class="kv"><span class="k">policy</span><span class="v" id="sys-policy">—</span></div>
         <div class="kv"><span class="k">schema de memória</span><span class="v" id="sys-memschema">—</span></div>
-      </section>
-      <section class="sys-panel spot" aria-label="Sessão">
-        <div class="sp-head"><span class="sp-index">02</span><span class="sp-title">Sessão</span><span class="sp-pip on" aria-hidden="true"></span></div>
+      </div>
+      <div class="ledger" aria-label="Sessão">
+        <h3 class="ledger-title"><span class="ledger-index">02</span>Sessão</h3>
         <div class="kv"><span class="k">id atual</span><span class="v" id="sys-session">—</span></div>
-      </section>
-      <section class="sys-panel spot" aria-label="Exibição">
-        <div class="sp-head"><span class="sp-index">03</span><span class="sp-title">Exibição</span><span class="sp-pip" aria-hidden="true"></span></div>
+      </div>
+      <div class="ledger" aria-label="Exibição">
+        <h3 class="ledger-title"><span class="ledger-index">03</span>Exibição</h3>
         <div class="kv"><span class="k">reduzir movimento</span><span class="v"><input type="checkbox" id="motion-toggle" aria-label="Reduzir movimento"></span></div>
         <p class="note">Também respeita a preferência do sistema operacional (<span class="mono">prefers-reduced-motion</span>).</p>
-      </section>
-      <section class="sys-panel spot" aria-label="Atalhos">
-        <div class="sp-head"><span class="sp-index">04</span><span class="sp-title">Atalhos</span><span class="sp-pip" aria-hidden="true"></span></div>
+      </div>
+      <div class="ledger" aria-label="Atalhos">
+        <h3 class="ledger-title"><span class="ledger-index">04</span>Atalhos</h3>
         <div class="kv"><span class="k">enviar</span><span class="v">Enter</span></div>
         <div class="kv"><span class="k">quebra de linha</span><span class="v">Shift+Enter</span></div>
         <div class="kv"><span class="k">cancelar envio</span><span class="v">Esc</span></div>
-      </section>
+      </div>
     </section>
   </main>
 
@@ -1901,7 +1979,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       if (!items.length) { list.appendChild(emptyRow("Nenhuma sessão registrada.")); return; }
       items.forEach(function (s, i) {
         var row = document.createElement("div");
-        row.className = "row clickable spot";
+        row.className = "row clickable";
         row.setAttribute("tabindex", "0");
         var main = document.createElement("div");
         main.className = "r-main";
@@ -1977,7 +2055,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       if (!items.length) { list.appendChild(emptyRow("Nenhuma tarefa registrada.")); return; }
       items.forEach(function (t, i) {
         var row = document.createElement("div");
-        row.className = "row spot";
+        row.className = "row";
         var main = document.createElement("div");
         main.className = "r-main";
         var title = document.createElement("div");
@@ -2028,7 +2106,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       }
       items.forEach(function (m, i) {
         var row = document.createElement("div");
-        row.className = "row spot";
+        row.className = "row";
         var main = document.createElement("div");
         main.className = "r-main";
         var title = document.createElement("div");
@@ -2080,7 +2158,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       if (!items.length) { list.appendChild(emptyRow("Nenhuma atividade registrada.")); return; }
       items.forEach(function (ev, i) {
         var row = document.createElement("div");
-        row.className = "row spot";
+        row.className = "row";
         var dot = document.createElement("span");
         dot.className = "ev-dot";
         if (dot.style) { dot.style.background = outcomeColor(ev.outcome); dot.style.color = outcomeColor(ev.outcome); }
@@ -2112,7 +2190,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       if (!items.length) { list.appendChild(emptyRow("Nenhum evento de auditoria.")); return; }
       items.forEach(function (ev, i) {
         var row = document.createElement("div");
-        row.className = "row spot";
+        row.className = "row";
         var side = document.createElement("div");
         side.className = "r-side";
         side.appendChild(badge(ev.outcome || "—", outcomeBadge(ev.outcome)));
@@ -2171,6 +2249,19 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       ring.classList.remove("up", "down");
       if (st === "up") { ring.classList.add("up"); }
       else if (st === "down") { ring.classList.add("down"); }
+    }
+    // typographic instrument: state word + signal line carry the status
+    var nstate = $("nexus-state");
+    if (nstate && nstate.classList) {
+      nstate.classList.remove("is-up", "is-down");
+      if (st === "up") { nstate.classList.add("is-up"); }
+      else if (st === "down") { nstate.classList.add("is-down"); }
+    }
+    var sig = $("nexus-signal");
+    if (sig && sig.classList) {
+      sig.classList.remove("up", "down");
+      if (st === "up") { sig.classList.add("up"); }
+      else if (st === "down") { sig.classList.add("down"); }
     }
     if (text) {
       text.textContent = label;
