@@ -622,6 +622,71 @@ body::after {
 @keyframes trace-sweep {
   0% { opacity: 0.25; } 50% { opacity: 1; } 100% { opacity: 0.25; }
 }
+/* ============================================================
+   COMMAND SURFACE 2.0 — nine states, one energy line.
+   Each state is a small, honest difference in the line's behavior.
+   Driven by data-surface on #composer; the typing/busy/beam classes
+   remain as the legacy layer beneath.
+   ============================================================ */
+#composer .cmd-trace { position: relative; }
+#composer[data-surface="aware"] .cmd-trace { transform: scaleX(0.35); opacity: 0.55; }
+#composer[data-surface="typing"] .cmd-trace {
+  transform: scaleX(0.7); opacity: 0.8;
+  animation: trace-breathe 2.2s var(--ease-in-out) infinite;
+}
+@keyframes trace-breathe {
+  0%, 100% { opacity: 0.55; } 50% { opacity: 0.95; }
+}
+#composer[data-surface="armed"] .cmd-trace {
+  transform: scaleX(1); opacity: 1;
+  box-shadow: 0 0 12px rgba(70, 230, 196, 0.45);
+}
+#composer[data-surface="transmitting"] .cmd-trace {
+  transform: scaleX(1); opacity: 1;
+  animation: trace-sweep 0.7s var(--ease-in-out) infinite;
+}
+#composer[data-surface="transmitting"] .cmd-trace::after {
+  content: ""; position: absolute; top: -2px; left: 0;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent-strong);
+  box-shadow: 0 0 10px rgba(70, 230, 196, 1);
+  animation: trace-run 0.7s var(--ease-in-out) infinite;
+}
+@keyframes trace-run {
+  0% { left: 0; opacity: 1; } 100% { left: calc(100% - 5px); opacity: 0.4; }
+}
+#composer[data-surface="processing"] .cmd-trace {
+  transform: scaleX(1); opacity: 0.45; animation: none;
+}
+#composer[data-surface="cancelling"] .cmd-trace {
+  transform: scaleX(0); opacity: 0.2;
+  transition: transform 0.25s var(--ease-out), opacity 0.25s var(--ease-out);
+}
+#composer[data-surface="complete"] .cmd-trace {
+  transform: scaleX(1); opacity: 1;
+  animation: trace-complete 0.9s var(--ease-out) 1;
+}
+@keyframes trace-complete {
+  0% { opacity: 0.3; box-shadow: none; }
+  35% { opacity: 1; box-shadow: 0 0 18px rgba(70, 230, 196, 0.8); }
+  100% { opacity: 0.9; box-shadow: none; }
+}
+#composer[data-surface="error"] .cmd-trace {
+  transform: scaleX(1); opacity: 1;
+  background: linear-gradient(to right, var(--err), transparent 85%);
+  animation: trace-err 0.5s var(--ease-out) 2;
+}
+@keyframes trace-err {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.35; }
+}
+#composer[data-surface="armed"] #send {
+  border-color: var(--accent); color: var(--accent);
+  box-shadow: 0 0 14px rgba(70, 230, 196, 0.25);
+}
+#composer[data-surface="transmitting"] #send,
+#composer[data-surface="processing"] #send { color: var(--text-2); }
+/* Cursor field: presence near the surface lifts the energy line. */
+#composer.field-near::before { opacity: 0.85; }
 #composer-hints {
   display: flex; gap: 1.6rem;
   margin-top: 0.85rem;
@@ -726,6 +791,52 @@ body::after {
   background: var(--accent);
   box-shadow: 0 0 16px rgba(70, 230, 196, 0.9);
   pointer-events: none;
+}
+/* ============================================================
+   JARVIS SIGNAL — the machine's own sign language.
+   Seven events, one geometry family: hairline SVG strokes,
+   currentColor-driven, 15px. Recognition comes from recurrence
+   across the interface, not from decoration.
+   transmit › · process ◌ · receive ‹ · complete ◆ ·
+   error ▲ · connect ● · attend ◇
+   ============================================================ */
+.sig { width: 15px; height: 15px; flex: none; }
+.sig.ok { color: var(--ok); }
+.sig.err { color: var(--err); }
+.sig.warn { color: var(--warn); }
+.sig.accent { color: var(--accent); }
+.sig.info { color: var(--info); }
+.sig.dim { color: var(--text-3); }
+.sig.live { animation: glyph-breathe 1.6s ease-in-out infinite; }
+/* The signature element: one diamond, 7px, teal. It appears once per
+   real event — transmission dispatched, response received, task
+   completed — then it is gone. The diamond IS jarvis. */
+.j-sig {
+  display: inline-block; width: 7px; height: 7px; flex: none;
+  background: var(--accent);
+  transform: rotate(45deg);
+  box-shadow: 0 0 10px rgba(70, 230, 196, 0.75);
+  pointer-events: none;
+}
+.j-sig.once { animation: sig-once 1.15s var(--ease-out) forwards; }
+@keyframes sig-once {
+  0% { opacity: 0; transform: rotate(45deg) scale(0.4); }
+  30% { opacity: 1; transform: rotate(45deg) scale(1.25); }
+  100% { opacity: 0; transform: rotate(45deg) scale(0.9); }
+}
+/* Typographic identity: real codes (ids, hashes, refs) render in the
+   signature style — mono, tracked, dim, with a CSS diamond tick.
+   Pure CSS: textContent stays byte-identical for tests and copy. */
+.j-code {
+  font-family: var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.14em; font-size: 0.72em; color: var(--text-3);
+  white-space: nowrap;
+}
+.j-code::before {
+  content: ""; display: inline-block;
+  width: 5px; height: 5px; margin-right: 0.55em;
+  background: var(--accent); opacity: 0.7;
+  transform: rotate(45deg) translateY(-1px);
 }
 /* ============================================================
    INTERNAL VIEWS — instruments, not pages.
@@ -1774,18 +1885,40 @@ body::after {
     var W = 560, H = 560, CX = W / 2, CY = H / 2;
     var R = Math.min(W, H) * 0.30;
     var TAU = Math.PI * 2;
-    var state = "idle";       // idle | active | error   (complete pulses once, back to idle)
+    // ORB as CORE: eight energetic states, each visually distinct.
+    // standby | aware | listening | transmitting | processing |
+    // receiving | complete | error
+    // Legacy aliases (idle -> standby, active -> processing) keep old
+    // callers working. data-orb keeps the coarse contract the tests read:
+    // idle | active | complete | error.
+    var state = "standby";
     var audioLevel = 0;       // reserved for future voice input
-    var pulseStart = -1;      // timestamp of the last completion pulse
-    var energy = 0.22, energyTarget = 0.22;
+    var pulseStart = -1;      // timestamp of the last directional ring
+    var ringDir = 1;          // 1 = outward (transmit/complete), -1 = inward (receive)
+    var energy = 0.14, energyTarget = 0.14;
+    var churn = 1;            // processing: internal flows accelerate
     var boost = 0;            // pointer-velocity energy injection (decays)
     var kick = 0;             // send-sequence contraction kick (decays fast)
     var attention = 0;        // composer-focus lift: the orb "pays attention" (real interaction)
     var rafId = 0;
     var mx = CX, my = CY, hasPointer = false, lastPX = 0, lastPY = 0, lastPT = 0;
 
-    var LABELS = { idle: "IDLE", active: "PROCESSANDO", complete: "CONCLUÍDO", error: "ERRO" };
-    var ENERGY_OF = { idle: 0.22, active: 0.85, error: 0.60, complete: 0.85 };
+    var LABELS = {
+      standby: "STANDBY", aware: "ATENTO", listening: "OUVINDO",
+      transmitting: "TRANSMITINDO", processing: "PROCESSANDO",
+      receiving: "RECEBENDO", complete: "CONCLUÍDO", error: "ERRO"
+    };
+    var ENERGY_OF = {
+      standby: 0.14, aware: 0.32, listening: 0.45,
+      transmitting: 0.95, processing: 0.82, receiving: 0.90,
+      complete: 0.85, error: 0.60
+    };
+    // coarse contract for data-orb (tests + external readers)
+    var COARSE_OF = {
+      standby: "idle", aware: "idle", listening: "idle",
+      transmitting: "active", processing: "active", receiving: "active",
+      complete: "complete", error: "error"
+    };
 
     // 26 filaments — seeded once, deterministic per load
     var fils = [];
@@ -1815,13 +1948,27 @@ body::after {
     })();
 
     function setState(s) {
-      if (s === "complete") { pulseStart = now(); state = "complete"; }
-      else if (s === "listening") { return; } // no voice backend: never fake it
-      else { state = (s === "active" || s === "error") ? s : "idle"; pulseStart = -1; }
-      energyTarget = (ENERGY_OF[state] != null) ? ENERGY_OF[state] : 0.22;
-      if (wrap && wrap.setAttribute) { wrap.setAttribute("data-orb", state); }
-      if (label) { label.textContent = LABELS[state] || "IDLE"; }
+      // legacy aliases
+      if (s === "idle") { s = "standby"; }
+      else if (s === "active") { s = "processing"; }
+      if (!LABELS[s]) { return; } // unknown: never fake a state
+      if (s === "complete" || s === "transmitting") { pulseStart = now(); ringDir = 1; }
+      else if (s === "receiving") { pulseStart = now(); ringDir = -1; }
+      else { pulseStart = -1; }
+      state = s;
+      churn = (s === "processing") ? 1.65 : (s === "transmitting" ? 1.3 : 1);
+      energyTarget = ENERGY_OF[s];
+      if (wrap && wrap.setAttribute) { wrap.setAttribute("data-orb", COARSE_OF[s]); }
+      if (label) { label.textContent = LABELS[s]; }
       drawOnce();
+      restart();
+    }
+    // nudge: the cursor field breathes on the orb (proximity, 0..1).
+    // Real pointer presence — a whisper of energy, never a state change.
+    function nudge(x) {
+      if (S.reducedMotion) { return; }
+      x = Math.max(0, Math.min(1, x));
+      boost = Math.min(1, boost + x * 0.10);
       restart();
     }
 
@@ -1918,8 +2065,8 @@ body::after {
           for (var s2 = 0; s2 <= steps; s2++) {
             var a = f.seed + f.dir * (s2 / steps) * TAU * 1.5;
             var rr = baseR * (0.25 + 0.75 * s2 / steps);
-            rr *= 1 + 0.16 * f.wob * Math.sin(a * 3 + t * f.spd * 2.2 + f.seed);
-            rr *= 1 + 0.10 * e * Math.sin(a * 5 - t * f.spd * 3.1);
+            rr *= 1 + 0.16 * f.wob * Math.sin(a * 3 + t * f.spd * 2.2 * churn + f.seed);
+            rr *= 1 + 0.10 * e * Math.sin(a * 5 - t * f.spd * 3.1 * churn);
             var x = CX + Math.cos(a) * rr, y = CY + Math.sin(a) * rr;
             if (s2 === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
           }
@@ -1968,26 +2115,25 @@ body::after {
       ctx.strokeStyle = "hsla(" + pal.h2 + ",95%,78%,0.40)";
       ctx.lineWidth = 1.6; ctx.stroke(boundary);
 
-      // 6 — completion pulse: one expanding ring, then gone (real event)
+      // 6 — directional rings: real events made visible.
+      // transmit/complete: energy leaves the core (outward).
+      // receive: the answer arrives (inward). One ring, then gone.
       if (pulseStart >= 0) {
         var age = (tms - pulseStart) / 900;
         // drawOnce() renders a fixed-timestamp still (8000ms); it must never
         // rewind a live pulse started later — clamp instead of going negative.
         if (age < 0) { age = 0; }
         if (age < 1) {
+          var rr0 = (ringDir > 0) ? R * 0.5 : R * 1.45;
+          var rr1 = (ringDir > 0) ? R * 1.45 : R * 0.5;
           ctx.beginPath();
-          ctx.arc(CX, CY, R * 0.5 + age * R * 0.9, 0, TAU);
+          ctx.arc(CX, CY, rr0 + (rr1 - rr0) * age, 0, TAU);
           ctx.strokeStyle = "hsla(" + pal.h2 + ",95%,72%," + (0.5 * (1 - age)).toFixed(3) + ")";
           ctx.lineWidth = 2;
           ctx.stroke();
         } else {
           pulseStart = -1;
-          if (state === "complete") {
-            state = "idle";
-            energyTarget = ENERGY_OF.idle;
-            if (wrap && wrap.setAttribute) { wrap.setAttribute("data-orb", "idle"); }
-            if (label) { label.textContent = LABELS.idle; }
-          }
+          if (state === "complete") { setState("standby"); }
         }
       }
 
@@ -2058,7 +2204,7 @@ body::after {
       restart();
     }
 
-    return { setState: setState, setAudioLevel: setAudioLevel, pulse: pulse, drawOnce: drawOnce, wake: restart, start: start, setAttention: setAttention };
+    return { setState: setState, setAudioLevel: setAudioLevel, pulse: pulse, nudge: nudge, drawOnce: drawOnce, wake: restart, start: start, setAttention: setAttention };
   })();
 
   // ---------- ambient particle layer (layer 3) ----------
@@ -2288,16 +2434,165 @@ body::after {
     return { start: start, sync: sync, swell: swell, level: level };
   })();
 
+  // ---------- transmission system ----------
+  // Information travels the interface. Packets move along real geometry:
+  // composer -> orb on dispatch (tx), orb -> conversation on arrival (rx).
+  // WAAPI, GPU-safe, self-cleaning. Reduced motion: no packets — the
+  // state changes alone carry the meaning.
+  var Transmit = (function () {
+    function packet(fromId, toId, kind, delayMs) {
+      if (S.reducedMotion) { return; }
+      var run = function () {
+        var from = $(fromId), to = $(toId);
+        if (!from || !to || !document.body) { return; }
+        var fr = from.getBoundingClientRect(), tr = to.getBoundingClientRect();
+        if (!fr.width || !tr.width) { return; }
+        var dot = document.createElement("span");
+        dot.className = "tx-pulse" + (kind === "rx" ? " rx" : "");
+        dot.setAttribute("aria-hidden", "true");
+        var sx = fr.left + fr.width / 2, sy = fr.top + 8;
+        if (kind === "rx") { sx = tr.left + tr.width / 2; sy = tr.top + tr.height * 0.4; }
+        dot.style.left = sx + "px";
+        dot.style.top = sy + "px";
+        document.body.appendChild(dot);
+        var ex = tr.left + tr.width / 2, ey = tr.top + tr.height * 0.55;
+        if (kind === "rx") {
+          var cr = from.getBoundingClientRect();
+          ex = cr.left + cr.width / 2; ey = cr.top + 40;
+        }
+        var dx = ex - sx, dy = ey - sy;
+        if (typeof dot.animate === "function") {
+          var anim = dot.animate([
+            { transform: "translate(0, 0) scale(1)", opacity: 0.95 },
+            { transform: "translate(" + (dx * 0.5) + "px," + (dy * 0.62) + "px) scale(0.65)", opacity: 0.55, offset: 0.62 },
+            { transform: "translate(" + dx + "px," + dy + "px) scale(0.15)", opacity: 0 }
+          ], { duration: kind === "rx" ? 620 : 680, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+          if (anim) {
+            anim.onfinish = function () { if (dot.parentNode) { dot.parentNode.removeChild(dot); } };
+            return;
+          }
+        }
+        if (dot.parentNode) { dot.parentNode.removeChild(dot); }
+      };
+      if (delayMs && typeof setTimeout === "function") { setTimeout(run, delayMs); }
+      else { run(); }
+    }
+    return { packet: packet };
+  })();
+  // transmitPulse: dispatch — a small train of packets leaves the surface.
+  function transmitPulse() {
+    Transmit.packet("composer", "orb-wrap", "tx", 0);
+    Transmit.packet("composer", "orb-wrap", "tx", 90);
+    Transmit.packet("composer", "orb-wrap", "tx", 180);
+  }
+  // receivePulse: the answer travels back — orb -> conversation.
+  function receivePulse() {
+    Transmit.packet("orb-wrap", "conversation", "rx", 0);
+  }
+
+  // ---------- command surface 2.0 ----------
+  // Nine states, one energy line. Focus/typing drive the quiet states;
+  // the send lifecycle drives the loud ones. In-flight states always win
+  // over presence states — the machine never confuses attention with work.
+  var Surface = (function () {
+    var current = "idle";
+    var QUIET = { idle: 1, aware: 1, typing: 1, armed: 1 };
+    function set(s) {
+      var c = $("composer");
+      if (c && c.setAttribute) { c.setAttribute("data-surface", s); }
+      current = s;
+    }
+    function current() { return current; }
+    function quietSet(s) {
+      if (!QUIET[current]) { return; }
+      set(s);
+    }
+    function start() {
+      var input = $("input");
+      if (!input || !input.addEventListener) { return; }
+      input.addEventListener("focus", function () {
+        quietSet("aware");
+        if (S.uiState === "IDLE") { Orb.setState("aware"); }
+      });
+      input.addEventListener("blur", function () {
+        if (QUIET[current]) { set("idle"); }
+        if (S.uiState === "IDLE") { Orb.setState("standby"); }
+      });
+      input.addEventListener("input", function () {
+        var has = input.value.length > 0;
+        quietSet(has ? "armed" : "typing");
+        if (S.uiState === "IDLE") { Orb.setState(has ? "listening" : "aware"); }
+        var cz = $("composer-zone");
+        if (cz && cz.classList) { cz.classList.toggle("typing", has); }
+      });
+    }
+    return { set: set, current: current, start: start };
+  })();
+
+  // ---------- cursor field ----------
+  // The system perceives where the pointer is. Near the orb (< 340px)
+  // the core stirs; near the command surface (< 220px) the energy line
+  // lifts. No clicks, no state changes — presence only. Touch pointers
+  // are ignored: there is no hover to feel.
+  var Field = (function () {
+    var px = -9999, py = -9999, scheduled = false, isTouch = false;
+    function rectOf(id) {
+      var el = $(id);
+      if (!el || typeof el.getBoundingClientRect !== "function") { return null; }
+      return el.getBoundingClientRect();
+    }
+    function distTo(r) {
+      if (!r || !r.width) { return 1e9; }
+      var cx = Math.max(r.left, Math.min(px, r.left + r.width));
+      var cy = Math.max(r.top, Math.min(py, r.top + r.height));
+      var dx = px - cx, dy = py - cy;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+    function update() {
+      scheduled = false;
+      if (isTouch || S.reducedMotion) { return; }
+      if (px < -1000) { return; }
+      var or = rectOf("orb-wrap");
+      if (or && or.width) {
+        var d = distTo(or);
+        if (d < 340) { try { Orb.nudge(1 - d / 340); } catch (e) { /* ignore */ } }
+      }
+      var c = $("composer");
+      var cr = rectOf("composer");
+      if (c && c.classList && cr) {
+        var near = distTo(cr) < 220 && !S.inFlight;
+        c.classList.toggle("field-near", near);
+        if (near && Surface.current() === "idle") { Surface.set("aware"); }
+        else if (!near && Surface.current() === "aware") { Surface.set("idle"); }
+      }
+    }
+    function onMove(ev) {
+      if (ev && ev.pointerType === "touch") { isTouch = true; return; }
+      px = ev.clientX; py = ev.clientY;
+      if (!scheduled && typeof requestAnimationFrame === "function") {
+        scheduled = true;
+        requestAnimationFrame(update);
+      } else if (!scheduled) { update(); }
+    }
+    function start() {
+      if (typeof window !== "undefined" && window.addEventListener) {
+        window.addEventListener("pointermove", onMove, { passive: true });
+        window.addEventListener("pointerleave", function () { px = -9999; py = -9999; });
+      }
+    }
+    return { start: start };
+  })();
+
   // ---------- UI state machine (UI-level; mirrors real backend outcomes) ----------
   // IDLE: nothing in flight. PROCESSING: a send is in flight (real).
   // COMPLETED: last send resolved ok (pulse, then back to IDLE).
   // ERROR: last send failed (real). CANCELLED: user aborted a send (real).
   function setUiState(next) {
     S.uiState = next;
-    if (next === "PROCESSING") { Orb.setState("active"); }
+    if (next === "PROCESSING") { Orb.setState("processing"); }
     else if (next === "COMPLETED") { Orb.setState("complete"); }
     else if (next === "ERROR") { Orb.setState("error"); }
-    else { Orb.setState("idle"); } // IDLE and CANCELLED settle back to idle
+    else { Orb.setState("standby"); } // IDLE and CANCELLED settle back
     // the environment computes with the system: energy follows real state
     try { Ambience.sync(); } catch (e) { /* Ambience may not exist yet */ }
   }
@@ -2550,6 +2845,91 @@ body::after {
       }
     }
     if (dot.parentNode) { dot.parentNode.removeChild(dot); }
+  }
+
+  // ---------- JARVIS SIGNAL ----------
+  // Seven events, one geometry family. Every glyph below is born from a
+  // REAL event — never decorative. The diamond (complete/attend) is the
+  // signature element: the one mark that belongs to JARVIS alone.
+  var SIGNAL_KIND = {
+    transmit: "accent", process: "info", receive: "accent",
+    complete: "ok", error: "err", connect: "accent", attend: "dim"
+  };
+  function signalGlyph(kind, live) {
+    var svg = (typeof document.createElementNS === "function")
+      ? document.createElementNS(SVGNS, "svg")
+      : document.createElement("svg");
+    svg.setAttribute("viewBox", "0 0 10 10");
+    svg.setAttribute("class", "sig " + (SIGNAL_KIND[kind] || "dim") + (live ? " live" : ""));
+    svg.setAttribute("aria-hidden", "true");
+    function mk(tag) {
+      return (typeof document.createElementNS === "function")
+        ? document.createElementNS(SVGNS, tag)
+        : document.createElement(tag);
+    }
+    var el;
+    if (kind === "transmit") {           // ›  dispatch
+      el = mk("path");
+      el.setAttribute("d", "M3.2 2 L6.8 5 L3.2 8");
+      el.setAttribute("fill", "none"); el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "1.5"); el.setAttribute("stroke-linecap", "round");
+      el.setAttribute("stroke-linejoin", "round");
+    } else if (kind === "receive") {     // ‹  arrival
+      el = mk("path");
+      el.setAttribute("d", "M6.8 2 L3.2 5 L6.8 8");
+      el.setAttribute("fill", "none"); el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "1.5"); el.setAttribute("stroke-linecap", "round");
+      el.setAttribute("stroke-linejoin", "round");
+    } else if (kind === "process") {     // ◌  work in flight
+      el = mk("circle");
+      el.setAttribute("cx", "5"); el.setAttribute("cy", "5"); el.setAttribute("r", "3.1");
+      el.setAttribute("fill", "none"); el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "1.3"); el.setAttribute("stroke-dasharray", "3.4 2.2");
+    } else if (kind === "complete") {    // ◆  the signature, filled
+      el = mk("path");
+      el.setAttribute("d", "M5 1.4 L8.6 5 L5 8.6 L1.4 5 Z");
+      el.setAttribute("fill", "currentColor");
+    } else if (kind === "attend") {      // ◇  the signature, hollow
+      el = mk("path");
+      el.setAttribute("d", "M5 1.4 L8.6 5 L5 8.6 L1.4 5 Z");
+      el.setAttribute("fill", "none"); el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "1.2");
+    } else if (kind === "error") {       // ▲  controlled fault
+      el = mk("path");
+      el.setAttribute("d", "M5 2 L8.4 7.8 L1.6 7.8 Z");
+      el.setAttribute("fill", "none"); el.setAttribute("stroke", "currentColor");
+      el.setAttribute("stroke-width", "1.3"); el.setAttribute("stroke-linejoin", "round");
+    } else {                             // connect  ●—●  link established
+      el = mk("g");
+      el.setAttribute("stroke", "currentColor"); el.setAttribute("stroke-width", "1.2");
+      var c1 = mk("circle");
+      c1.setAttribute("cx", "3"); c1.setAttribute("cy", "5"); c1.setAttribute("r", "1.6");
+      c1.setAttribute("fill", "currentColor"); c1.setAttribute("stroke", "none");
+      var c2 = mk("circle");
+      c2.setAttribute("cx", "7"); c2.setAttribute("cy", "5"); c2.setAttribute("r", "1.6");
+      c2.setAttribute("fill", "none");
+      var ln = mk("line");
+      ln.setAttribute("x1", "4.4"); ln.setAttribute("y1", "5");
+      ln.setAttribute("x2", "5.6"); ln.setAttribute("y2", "5");
+      el.appendChild(c1); el.appendChild(ln); el.appendChild(c2);
+    }
+    svg.appendChild(el);
+    return svg;
+  }
+  // placeSig: the signature diamond appears once for a real event, then
+  // leaves. `stay` keeps a quiet static diamond (reduced-motion safe).
+  function placeSig(host, stay) {
+    if (!host || typeof document === "undefined") { return null; }
+    var d = document.createElement("span");
+    d.className = "j-sig" + (stay ? "" : " once");
+    d.setAttribute("aria-hidden", "true");
+    host.appendChild(d);
+    if (!stay) {
+      var kill = function () { if (d.parentNode) { d.parentNode.removeChild(d); } };
+      if (!S.reducedMotion && typeof setTimeout === "function") { setTimeout(kill, 1250); }
+      else { kill(); }
+    }
+    return d;
   }
 
   // prependChild: insertBefore where available, appendChild fallback.
@@ -3178,10 +3558,13 @@ body::after {
 
   function send(text) {
     if (S.inFlight || !text) { return; }
-    setUiState("PROCESSING");
+    // TRANSMITTING: the dispatch is its own visible moment — energy
+    // concentrates, packets leave the surface, then processing begins.
+    Orb.setState("transmitting");
     Orb.pulse(); // contraction kick: the orb "takes a breath" on dispatch
     transmitPulse(); // energy released: composer → orb (real cause → effect)
-    setState("processando…");
+    Surface.set("transmitting");
+    setState("transmitindo…");
     setBusy(true);
 
     var sid = S.sessionId;
@@ -3195,6 +3578,11 @@ body::after {
     var think = thinkingBubble();
     var controller = (typeof AbortController === "function") ? new AbortController() : null;
     S.inFlight = controller;
+    if (typeof setTimeout === "function") {
+      setTimeout(function () {
+        if (S.inFlight) { setUiState("PROCESSING"); Surface.set("processing"); }
+      }, 450); // the transmission moment breathes before work begins
+    } else { setUiState("PROCESSING"); Surface.set("processing"); }
 
     var url = "/api/v1/sessions/" + encodeURIComponent(sid) + "/messages";
     var doPost = function (sessionId) {
@@ -3205,6 +3593,9 @@ body::after {
 
     var finishOk = function (payload) {
       if (think && think.remove) { think.remove(); }
+      // RECEIVING: the pulse returns — orb receives the information.
+      Orb.setState("receiving");
+      receivePulse();
       var msg = (payload && payload.message) || "(resposta vazia)";
       var source = (payload && payload.source) || "";
       var status = (payload && payload.status) || "";
@@ -3234,11 +3625,20 @@ body::after {
       setState("ok");
       setBusy(false);
       S.inFlight = null;
-      setUiState("COMPLETED");
-      afterTurn(true);
+      Surface.set("complete");
+      if (typeof setTimeout === "function") {
+        setTimeout(function () {
+          setUiState("COMPLETED");
+          afterTurn(true);
+          placeSig($("panel-turns"));
+        }, S.reducedMotion ? 0 : 420); // let RECEIVING read before COMPLETE
+      } else {
+        setUiState("COMPLETED");
+        afterTurn(true);
+      }
       if (typeof setTimeout === "function" && !S.reducedMotion) {
-        setTimeout(function () { if (S.uiState === "COMPLETED") { setUiState("IDLE"); } }, 1400);
-      } else { setUiState("IDLE"); }
+        setTimeout(function () { if (S.uiState === "COMPLETED") { setUiState("IDLE"); Surface.set("idle"); } }, 1900);
+      } else if (typeof setTimeout !== "function") { setUiState("IDLE"); }
     };
 
     var finishErr = function (errText, cancelled) {
@@ -3254,10 +3654,13 @@ body::after {
       }
       setBusy(false);
       S.inFlight = null;
+      Surface.set(cancelled ? "cancelling" : "error");
       afterTurn(false);
       if (typeof setTimeout === "function" && !S.reducedMotion) {
-        setTimeout(function () { if (S.uiState === "ERROR" || S.uiState === "CANCELLED") { setUiState("IDLE"); } }, 2200);
-      } else { setUiState("IDLE"); }
+        setTimeout(function () {
+          if (S.uiState === "ERROR" || S.uiState === "CANCELLED") { setUiState("IDLE"); Surface.set("idle"); }
+        }, 2200);
+      } else { setUiState("IDLE"); Surface.set("idle"); }
     };
 
     var attempt = function (sessionId, retried) {
@@ -3531,11 +3934,7 @@ body::after {
         if (c && c.classList && !S.inFlight) { c.classList.remove("beam"); }
         Orb.setAttention(false);
       });
-      // typing: the energy line brightens with real content (no fake meter)
-      input.addEventListener("input", function () {
-        var c = $("composer");
-        if (c && c.classList) { c.classList.toggle("typing", input.value.length > 0); }
-      });
+      // (typing/armed surface states are owned by Surface.start() above)
     }
     // cursor spotlight follows the pointer on Home (sets --mx/--my)
     var home = $("view-home");
@@ -3589,6 +3988,8 @@ body::after {
   Ambient.start();
   Parallax.start();
   Ambience.start();
+  Surface.start();
+  Field.start();
   wire();
   showView(initialView());
   renderNexus(); // honest initial state: "não consultado" until a real query

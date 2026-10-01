@@ -19,7 +19,7 @@ OUT = Path("/tmp/jarvis-visual")  # noqa: S108 - scratch output for screenshots
 OUT.mkdir(parents=True, exist_ok=True)
 
 VIEWS = ["home", "sessions", "tasks", "memory", "activity", "audit", "nexus", "system"]
-VIEWPORTS = [(1920, 1080), (1600, 900), (1440, 900), (1280, 720), (1024, 768)]
+VIEWPORTS = [(1920, 1080), (1600, 900), (1440, 900), (1280, 720), (1024, 768), (900, 700), (760, 700), (390, 844)]
 
 
 async def main() -> int:
@@ -61,6 +61,8 @@ async def main() -> int:
             if len(visible) != 1:
                 errors.append(f"view '{view}': {len(visible)} views visible: {visible}")
             await page.screenshot(path=str(OUT / f"view-{view}-1920.png"))
+            if view == "home":
+                pass  # home multi-viewport shots are taken in step 3
 
         # 2. Composer test on Home
         await page.locator('[data-view="home"], button[data-nav="home"]').first.click()
@@ -78,13 +80,20 @@ async def main() -> int:
         for w, h in VIEWPORTS[1:]:
             await page.set_viewport_size({"width": w, "height": h})
             await page.wait_for_timeout(800)
+            # ensure we are on home for the required home screenshots
+            await page.locator('[data-view="home"], button[data-nav="home"]').first.click()
+            await page.wait_for_timeout(400)
             await page.screenshot(path=str(OUT / f"home-{w}x{h}.png"))
             overlap = await page.evaluate(
                 """() => {
                     const els = [...document.querySelectorAll('body *')].filter(e => {
                         const r = e.getBoundingClientRect();
+                        const cs = getComputedStyle(e);
+                        // decorative ambient layers (aurora blobs etc.) are
+                        // pointer-events:none by design and overlap everything
+                        if (cs.pointerEvents === 'none' && cs.position === 'absolute') { return false; }
                         return r.width > 4 && r.height > 4 && r.bottom > 0 && r.right > 0
-                            && getComputedStyle(e).visibility !== 'hidden'
+                            && cs.visibility !== 'hidden'
                             && e.offsetParent !== null;
                     });
                     const bad = [];
