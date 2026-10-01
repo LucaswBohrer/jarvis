@@ -760,14 +760,22 @@ body:has(#view-home:not([hidden])) #syspanel { display: flex; }
 .btn-ghost:active:not(:disabled), .btn-icon:active:not(:disabled),
 .btn-danger:active:not(:disabled) { transform: translateY(1px) scale(0.98); }
 /* PRIMARY / SYSTEM ACTION */
+/* PRIMARY: the single functional accent — an instrument key, not a
+   glossy button. Hairline contour, teal voice, fills only on hover. */
 .btn {
-  background: linear-gradient(180deg, #4ce8cc, var(--accent) 60%, #2bd3b2);
-  color: #04231d; border: 1px solid rgba(63, 224, 195, 0.65); border-radius: 9px;
-  padding: 0.65rem 1.15rem; font-weight: 650; font-size: 0.9rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 10px rgba(63, 224, 195, 0.16);
+  background: none; border: 1px solid rgba(63, 224, 195, 0.35); border-radius: 0;
+  color: var(--accent); padding: 0.65rem 1.3rem;
+  font-family: var(--font-mono); font-size: 0.7rem; font-weight: 500;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  box-shadow: none; cursor: pointer;
+  transition: background var(--d-fast), border-color var(--d-fast), color var(--d-fast);
 }
-.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 18px var(--accent-glow); }
-.btn:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+.btn:hover:not(:disabled) {
+  background: rgba(63, 224, 195, 0.08); border-color: var(--accent);
+  transform: none; box-shadow: none;
+}
+.btn:active:not(:disabled) { background: rgba(63, 224, 195, 0.14); }
+.btn:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
 /* SECONDARY */
 .btn-secondary {
   background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
@@ -843,7 +851,34 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
    of the entry (text + index), never a fill. The only motion is
    a 4px lateral shift on clickable entries.
    ============================================================ */
-.list { display: flex; flex-direction: column; counter-reset: jrow; }
+/* ============================================================
+   MOTION LANGUAGE — a vocabulary, not decoration.
+   Every animation expresses cause → effect: a view appears, an
+   entry joins a list, a message arrives, a state changes.
+   - viewIn: the signature spatial shift (navigation)
+   - greetRise: display type settles (Home)
+   - msgEnter: a system event arrives (thread)
+   - rise: an entry joins an index (lists) — calm, no blur
+   - energySweep: processing (composer line) — real state only
+   - pulse-dot / statSweep: live / processing dots — real states only
+   Duration ladder: --d-fast (160) micro · --d-med (260) state ·
+   --d-slow (420) entrances · --d-page (520) spatial. Never linear
+   on UI transitions; exits faster than enters; stagger capped.
+   ============================================================ */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ledgerRise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+/* ledgers and instrument groups enter as composed units */
+.view:not([hidden]) .ledger { animation: ledgerRise var(--d-slow) var(--ease-out) both; }
+.view:not([hidden]) .ledger:nth-of-type(2) { animation-delay: 80ms; }
+.view:not([hidden]) .ledger:nth-of-type(3) { animation-delay: 160ms; }
+.view:not([hidden]) .ledger:nth-of-type(4) { animation-delay: 240ms; }
+.view:not([hidden]) .nexus-hero { animation: ledgerRise var(--d-slow) var(--ease-out) both; }
 .row {
   border-bottom: 1px solid var(--hairline);
   padding: 1.05rem 0.2rem;
