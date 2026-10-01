@@ -1,0 +1,115 @@
+name: Publish JARVIS test count
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-count:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout JARVIS
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e '.[dev]'
+
+      - name: Collect test count
+        id: collect
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pytest --collect-only -q 2>&1 | tee /tmp/pytest-collect.txt
+          count=$(python - <<'PY'
+          import re
+          from pathlib import Path
+          text = Path('/tmp/pytest-collect.txt').read_text()
+          matches = re.findall(r'(\d+)\s+tests?\s+collected', text)
+          if not matches:
+              raise SystemExit('Could not parse pytest collected count')
+          print(matches[-1])
+          PY
+          )
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Run full test suite
+        run: python -m pytest tests/ -q
+
+      - name: Publish verified count to portfolio
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.PORTFOLIO_SYNC_TOKEN }}
+          TEST_COUNT: ${{ steps.collect.outputs.count }}
+          WORKFLOW_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          VERIFIED_AT: ${{ github.event.head_commit.timestamp }}
+          COMMIT_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+          from datetime import datetime, timezone
+
+          owner = 'LucaswBohrer'
+          repo = 'portfolio'
+          path = 'public/data/jarvis-tests.json'
+          api = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}'
+          token = os.environ['GH_TOKEN']
+          if not token:
+              raise SystemExit('PORTFOLIO_SYNC_TOKEN is not configured')
+
+          headers = {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': f'Bearer {token}',
+              'X-GitHub-Api-Version': '2022-11-28',
+              'User-Agent': 'jarvis-test-count-workflow',
+          }
+
+          try:
+              request = urllib.request.Request(api, headers=headers)
+              with urllib.request.urlopen(request) as response:
+                  current = json.load(response)
+          except urllib.error.HTTPError as exc:
+              raise SystemExit(f'Could not read portfolio JSON: HTTP {exc.code}') from exc
+
+          payload = {
+              'project': 'JARVIS',
+              'testCount': int(os.environ['TEST_COUNT']),
+              'source': 'pytest --collect-only -q',
+              'status': 'passed',
+              'verifiedAt': os.environ.get('VERIFIED_AT') or datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+              'commit': os.environ['COMMIT_SHA'],
+              'workflowRun': os.environ['WORKFLOW_RUN'],
+          }
+          encoded = base64.b64encode((json.dumps(payload, indent=2) + '\n').encode()).decode()
+          body = json.dumps({
+              'message': f'chore: sync JARVIS test count ({payload["testCount"]})',
+              'content': encoded,
+              'sha': current['sha'],
+              'branch': 'main',
+          }).encode()
+          request = urllib.request.Request(api, data=body, headers={**headers, 'Content-Type': 'application/json'}, method='PUT')
+          try:
+              with urllib.request.urlopen(request) as response:
+                  result = json.load(response)
+          except urllib.error.HTTPError as exc:
+              detail = exc.read().decode(errors='replace')
+              raise SystemExit(f'Could not publish portfolio JSON: HTTP {exc.code}: {detail}') from exc
+          print(f'Published {payload["testCount"]} tests in commit {result["commit"]["sha"][:7]}')
+          PY
