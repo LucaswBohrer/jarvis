@@ -6,83 +6,79 @@
 <title>JARVIS — Local Intelligence</title>
 <style>
 /* ============================================================
-   JARVIS — VISUAL LANGUAGE RECONSTRUCTION (2026-10-01)
-   AI Operating Environment, not AI Dashboard.
+   JARVIS — VISUAL RESET (2026-10-01)
+   Art direction reset + complete frontend redesign.
 
-   Core move: DISSOLVE THE SURFACES. Grouping happens through
-   proximity, typography, scale and alignment — not boxes.
-   The orb is the gravitational center; everything else is
-   composed around it. Space is the primary material.
+   Composition first. If every animation is switched off, this
+   must still read as JARVIS: a sophisticated machine behind
+   the screen — not a dashboard with effects.
+
+   Layers (in order):
+     ART DIRECTION → COMPOSITION → TYPOGRAPHY → SPATIAL
+     HIERARCHY → MATERIALITY → INTERACTION → MOTION → AMBIENCE
    ============================================================ */
 :root {
   color-scheme: dark;
-  /* ---- environment: near-black with a blue shift ---- */
-  --bg: #04070c;
-  --bg-2: #060a11;
-  /* ---- text ---- */
-  --text: #eaf1fa;
-  --muted: #93a5bf;
-  --faint: #5d6f89;
-  --whisper: #3d4c63;
-  /* ---- accent: ONE hue for UI (teal). The orb owns blue/violet plasma ---- */
-  --accent: #3fe0c3;
-  --accent-dim: rgba(63, 224, 195, 0.55);
-  --accent-faint: rgba(63, 224, 195, 0.14);
-  /* ---- semantics (states as behavior first; color only when real) ---- */
+
+  /* ---- environment: near-black, blue-shifted ---- */
+  --bg: #05080d;
+  --bg-deep: #020409;
+
+  /* ---- text: four depths, no more ---- */
+  --text: #edf2f9;      /* primary — identity, readings */
+  --text-2: #a7b7cf;    /* secondary — content */
+  --text-3: #68778f;    /* tertiary — metadata */
+  --text-4: #414d64;    /* whisper — micro labels at rest */
+
+  /* ---- accent: ONE hue for the whole UI.
+        The orb owns the plasma spectrum; the interface
+        speaks in a single teal voice. ---- */
+  --accent: #46e6c4;
+  --accent-strong: #7df3d8;
+  --accent-dim: rgba(70, 230, 196, 0.55);
+  --accent-faint: rgba(70, 230, 196, 0.12);
+  --accent-ghost: rgba(70, 230, 196, 0.05);
+
+  /* ---- semantics: color only when the state is real ---- */
   --ok: #3fb950;
   --warn: #d29922;
   --err: #f85149;
   --info: #58a6ff;
-  /* ---- hairlines, not boxes ---- */
-  --hairline: rgba(255, 255, 255, 0.07);
-  --hairline-soft: rgba(255, 255, 255, 0.04);
-  /* ---- type roles ---- */
-  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
-  /* display: the voice of the system — large, light, tight */
-  --display-w: 250;
-  --display-track: -0.02em;
-  /* technical label: the whisper of the system */
-  --label-size: 0.62rem;
-  --label-track: 0.3em;
-  /* ---- spacing scale ---- */
-  --sp-1: 4px; --sp-2: 8px; --sp-3: 16px; --sp-4: 32px; --sp-5: 64px; --sp-6: 128px;
+
+  /* ---- structure: hairlines, never boxes ---- */
+  --hairline: rgba(237, 242, 249, 0.09);
+  --hairline-soft: rgba(237, 242, 249, 0.045);
+
+  /* ---- type ---- */
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+
+  /* display: the voice of the machine — huge, light, tight */
+  --d1: clamp(3.4rem, 8.5vw, 7.6rem);
+  --d2: clamp(2rem, 4.2vw, 3.4rem);
+  --d3: clamp(1.3rem, 2.4vw, 1.9rem);
+  --display-w: 200;
+  --display-track: -0.035em;
+
+  /* micro label: the whisper of the machine */
+  --micro-size: 0.62rem;
+  --micro-track: 0.32em;
+
+  /* ---- spacing ---- */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 16px; --sp-4: 32px;
+  --sp-5: 64px; --sp-6: 128px;
+
   /* ---- motion: meaning only ---- */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spatial: cubic-bezier(0.22, 1, 0.36, 1); /* view/state shifts */
-  /* digital physics: elements have mass. Springs overshoot slightly
-     (never bounce); settle arrivals carry a hint of inertia. Used on
-     micro-interactions and spatial transitions — never on fades. */
+  --ease-spatial: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.28, 0.64, 1);
   --ease-settle: cubic-bezier(0.22, 1.12, 0.36, 1);
   --d-instant: 120ms;
-  --d-med: 200ms;
-  --d-page: 340ms;
-  --d-slow: 560ms;
-  /* ---- DEPRECATED (dashboard era) — kept as aliases while sections migrate.
-        Do not use in new code. ---- */
-  --surface: #0b1220;
-  --surface-2: #0e1626;
-  --surface-3: #121c31;
-  --border: #1c2942;
-  --border-soft: #141e33;
-  --accent-soft: rgba(63, 224, 195, 0.08);
-  --accent-glow: rgba(63, 224, 195, 0.35);
-  --violet: #8957e5;
-  --radius: 10px; --radius-sm: 6px; --radius-lg: 16px;
-  --cut: 12px; --cut-sm: 8px;
-  --panel: #0a101c; --panel-2: #0d1526; --panel-line: #1d2a46;
-  --tick: rgba(63, 224, 195, 0.6);
-  --aura-ok: rgba(63, 185, 80, 0.4);
-  --aura-warn: rgba(210, 153, 34, 0.4);
-  --aura-err: rgba(248, 81, 73, 0.4);
-  --aura-info: rgba(88, 166, 255, 0.4);
-  --aura-accent: rgba(63, 224, 195, 0.4);
-  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --d-fast: 120ms;
-  --t-fast: 120ms; --t-med: 200ms;
+  --d-med: 220ms;
+  --d-page: 380ms;
+  --d-slow: 640ms;
 }
+
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
@@ -92,1225 +88,1342 @@ body {
   font-family: var(--font-ui);
   font-size: 15px;
   line-height: 1.5;
-  letter-spacing: 0.2px; /* Raycast trick: air in dense dark */
+  letter-spacing: 0.015em;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 .mono { font-family: var(--font-mono); }
 
+/* micro label primitive — one voice for every whisper */
+.micro {
+  font-family: var(--font-mono);
+  font-size: var(--micro-size);
+  letter-spacing: var(--micro-track);
+  text-transform: uppercase;
+  color: var(--text-4);
+  font-weight: 500;
+}
+
+::selection { background: rgba(70, 230, 196, 0.25); }
+
+:focus-visible {
+  outline: 1px solid var(--accent-dim);
+  outline-offset: 3px;
+}
+
 /* ============================================================
-   Ambient layer — 4 stacked strata, pointer-events: none.
-   Decorative only: it never communicates system state.
+   ENVIRONMENT — subordinate to content, always.
+   Atmospheric depth: vignette + faint field + grain.
+   Nothing here may compete with the composition.
    ============================================================ */
-/* stratum 1: drifting particles (existing canvas, JS-driven) */
 #ambient {
   position: fixed; inset: 0; z-index: 0;
-  opacity: 0.55; pointer-events: none;
+  width: 100%; height: 100%;
+  opacity: 0.5;
+  pointer-events: none;
 }
-/* stratum 2: dot grid with radial mask (Linear/Linear-style depth) */
 #dotgrid {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image: radial-gradient(rgba(147, 165, 191, 0.13) 1px, transparent 1px);
-  background-size: 28px 28px;
-  -webkit-mask-image: radial-gradient(ellipse 90% 75% at 50% 42%, black 25%, transparent 78%);
-  mask-image: radial-gradient(ellipse 90% 75% at 50% 42%, black 25%, transparent 78%);
-  /* ambient computation: the field breathes with system energy */
-  opacity: calc(0.32 + var(--ambient-energy, 0.15) * 0.5);
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(237, 242, 249, 0.055) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 45%, black 20%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 45%, black 20%, transparent 78%);
+  opacity: 0.5;
 }
-/* cursor light: contextual light, extremely subtle. Follows the pointer
-   with heavy inertia — the space notices the hand, barely. */
-#cursor-light {
-  position: fixed; left: 0; top: 0; width: 520px; height: 520px;
-  z-index: 1; pointer-events: none;
-  background: radial-gradient(circle, rgba(63, 224, 195, 0.05), transparent 65%);
-  opacity: 0.5; will-change: transform;
+#aurora {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none; overflow: hidden;
+  opacity: 0.55;
 }
-/* stratum 3: aurora — teal/blue/violet, very low alpha, slow drift.
-   Hue slowly breathes so the palette never feels frozen. */
-#aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
-  /* ambient computation: the aurora is the system's breath */
-  opacity: calc(0.45 + var(--ambient-energy, 0.15) * 0.55); }
 #aurora i {
   position: absolute; border-radius: 50%;
-  filter: blur(90px); opacity: 0.10;
-  animation: auroraHue 26s ease-in-out infinite alternate;
+  filter: blur(90px);
+  mix-blend-mode: screen;
 }
 #aurora i:nth-child(1) {
-  width: 620px; height: 620px;
-  background: radial-gradient(circle, #0e6b60 0%, transparent 70%);
-  top: -200px; left: -160px;
-  animation: drift1 30s ease-in-out infinite alternate, auroraHue 26s ease-in-out infinite alternate;
+  width: 52vmax; height: 52vmax; left: -12vmax; top: -14vmax;
+  background: radial-gradient(circle, rgba(38, 92, 140, 0.20), transparent 65%);
+  animation: aurora-drift 46s ease-in-out infinite alternate;
 }
 #aurora i:nth-child(2) {
-  width: 540px; height: 540px;
-  background: radial-gradient(circle, #173f7d 0%, transparent 70%);
-  bottom: -220px; right: -140px;
-  animation: drift2 36s ease-in-out infinite alternate, auroraHue 32s ease-in-out infinite alternate-reverse;
+  width: 44vmax; height: 44vmax; right: -10vmax; bottom: -12vmax;
+  background: radial-gradient(circle, rgba(70, 230, 196, 0.055), transparent 65%);
+  animation: aurora-drift 62s ease-in-out infinite alternate-reverse;
 }
 #aurora i:nth-child(3) {
-  width: 420px; height: 420px;
-  background: radial-gradient(circle, #3b2a72 0%, transparent 70%);
-  top: 38%; left: 55%; opacity: 0.07;
-  animation: drift1 44s ease-in-out infinite alternate-reverse, auroraHue 38s ease-in-out infinite alternate;
+  width: 30vmax; height: 30vmax; left: 38%; top: 52%;
+  background: radial-gradient(circle, rgba(88, 120, 200, 0.10), transparent 65%);
+  animation: aurora-drift 54s ease-in-out infinite alternate;
 }
-@keyframes drift1 { from { transform: translate(0, 0); } to { transform: translate(100px, 70px); } }
-@keyframes drift2 { from { transform: translate(0, 0); } to { transform: translate(-80px, -60px); } }
-@keyframes auroraHue { from { filter: blur(90px) hue-rotate(-14deg); } to { filter: blur(90px) hue-rotate(22deg); } }
-/* stratum 4: film grain — cinematic texture, near-invisible */
+@keyframes aurora-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(4vmax, -3vmax, 0) scale(1.12); }
+}
 #grain {
-  position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: 0.05;
-  background-image: url("data:image/png;base64,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");
+  position: fixed; inset: 0; z-index: 60;
+  pointer-events: none; opacity: 0.5;
+  /* background set at boot: procedural noise tile (canvas, no assets) */
 }
-/* cursor spotlight — follows the pointer on Home only (JS sets --mx/--my) */
-#view-home::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
-  background: radial-gradient(560px circle at var(--mx, 50%) var(--my, 42%), rgba(63, 224, 195, 0.055), transparent 65%);
-  opacity: 0; transition: opacity var(--d-med) var(--ease-out);
+/* vignette: the field has edges, the content has light */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 120% 105% at 50% 42%, transparent 55%, rgba(2, 4, 9, 0.55) 100%);
 }
-#view-home:hover::before { opacity: 1; }
 
 /* ============================================================
-   Boot overlay — short, skippable, tied to real checks
+   SHELL — the instrument, not the app.
+   No chrome: topbar, nav and statusline float on the field
+   as edge marks. They are part of the machine, not a frame.
    ============================================================ */
-#boot {
-  position: fixed; inset: 0; z-index: 50;
-  background: var(--bg);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 1.4rem; cursor: pointer;
-  transition: opacity 320ms ease;
-}
-#boot.done { opacity: 0; pointer-events: none; }
-#boot[hidden] { display: none; }
-#boot .wordmark {
-  font-size: 2rem; letter-spacing: 0.55em; text-indent: 0.55em; font-weight: 600;
-  background: linear-gradient(100deg, var(--text) 30%, var(--accent) 50%, var(--text) 70%);
-  background-size: 220% 100%;
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: shimmer 2.2s linear infinite;
-}
-@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -20% 0; } }
-#boot .boot-sub { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.3em; text-indent: 0.3em; }
-#boot-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; min-width: 240px; }
-#boot-list li {
-  display: flex; align-items: center; gap: 0.6rem;
-  font-family: var(--font-mono); font-size: 0.78rem; color: var(--faint);
-}
-#boot-list li .bdot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--faint); flex: none;
-  transition: background var(--t-fast);
-}
-#boot-list li.ok { color: var(--muted); }
-#boot-list li.ok .bdot { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
-#boot-list li.fail { color: var(--err); }
-#boot-list li.fail .bdot { background: var(--err); }
-#boot .boot-hint { color: var(--faint); font-size: 0.72rem; }
+#app { position: fixed; inset: 0; z-index: 2; }
 
-/* ============================================================
-   App shell
-   ============================================================ */
-#app {
-  position: relative; z-index: 1;
-  display: grid;
-  /* Navigation rail + environment. No top bar row, no side panel column:
-     presence elements float; telemetry floats. Space is the material. */
-  grid-template-columns: 76px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  height: 100vh;
-}
-/* Topbar dissolved: brand, clock and backend status float in the
-   environment as presence, not as a bar. Nothing inside is interactive,
-   so the strip never intercepts pointer events. */
+/* ---- top edge: identity left, time + truth right ---- */
 #topbar {
-  position: fixed; top: 0; left: 76px; right: 0; z-index: 5;
-  display: flex; align-items: center; gap: 1rem;
-  padding: 1.15rem 1.8rem 0;
-  background: none; border: none; backdrop-filter: none;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 1.5rem 2.2rem 0;
   pointer-events: none;
 }
-.brand { display: flex; align-items: center; gap: 0.75rem; }
-/* Brand mark: abstract signal instrument — a diamond crossed by an energy
-   line. Deliberately NON-orbital: the orb owns plasma and life; the mark
-   owns geometry and precision. It does not breathe, glow or compete. */
+#topbar > * { pointer-events: auto; }
+.brand { display: flex; align-items: baseline; gap: 0.9rem; }
 .brand-mark {
-  width: 15px; height: 15px; flex: none;
-  border: 1.5px solid var(--muted);
+  width: 9px; height: 9px; align-self: center;
+  border: 1px solid var(--accent-dim);
   transform: rotate(45deg);
   position: relative;
-  transition: border-color var(--d-med);
+  transition: border-color var(--d-med) var(--ease-out);
 }
 .brand-mark::after {
-  content: ""; position: absolute;
-  left: -4px; right: -4px; top: 50%; height: 1.5px;
-  margin-top: -0.75px;
+  content: ""; position: absolute; inset: 2px;
   background: var(--accent);
-  transform: rotate(0deg);
+  opacity: 0.85;
+  transition: opacity var(--d-med) var(--ease-out), background var(--d-med) var(--ease-out);
 }
-.brand-mark.down { border-color: var(--whisper); }
-.brand-mark.down::after { background: var(--whisper); }
-#wordmark { font-weight: 650; letter-spacing: 0.34em; font-size: 0.82rem; color: var(--muted); }
-.brand .sub { color: var(--whisper); font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; }
-.top-right { margin-left: auto; display: flex; align-items: center; gap: 1.1rem; }
-#clock { font-size: 0.72rem; color: var(--whisper); letter-spacing: 0.18em; }
-.top-sep { width: 24px; height: 1px; background: var(--hairline); }
-.backend-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: var(--faint); letter-spacing: 0.14em; }
-.top-sep { width: 1px; height: 18px; background: var(--hairline); }
-#clock { color: var(--faint); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
-.backend-status { display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; transition: background var(--d-fast), box-shadow var(--d-fast); }
-.dot.ok { background: var(--ok); box-shadow: 0 0 10px rgba(63, 185, 80, 0.8); animation: pulse-dot 2.4s ease-in-out infinite; }
-.dot.down { background: var(--err); box-shadow: 0 0 10px rgba(248, 81, 73, 0.8); }
-.dot.warn { background: var(--warn); box-shadow: 0 0 10px rgba(210, 153, 34, 0.8); }
-@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
-
-/* ---------- SYSTEM NAVIGATION RAIL ----------
-   Hardware/software system control: the sliding energy indicator
-   glides to the active item; groups are separated by hairlines
-   with technical ticks. Hover brightens toward white (HUD law);
-   the accent hue is reserved for the ACTIVE item only. */
-/* ---------- navigation rail: architecture, not sidebar ----------
-   A 76px glyph rail. Labels are contextual — they appear only on hover,
-   floating beside the glyph. No boxes, no backgrounds on hover: the glyph
-   itself responds (brightness + micro-movement). Groups are separated by
-   space, not labels. */
-#nav {
-  position: relative;
-  padding: 5.2rem 0 1.2rem; /* clear the floating topbar */
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  overflow-y: auto; overflow-x: visible;
-  min-height: 0;
-  z-index: 6;
-}
-/* hairline spine: the rail's only structure */
-#nav::before {
-  content: ""; position: absolute; top: 4.6rem; bottom: 1rem; left: 50%;
-  width: 1px; background: var(--hairline-soft);
-}
-/* energy indicator: a short teal segment gliding along the spine */
-#nav-indicator {
-  position: absolute; left: 50%; margin-left: -1px; width: 2px; border-radius: 2px;
-  background: var(--accent);
-  box-shadow: 0 0 8px rgba(63, 224, 195, 0.5);
-  transition: transform var(--d-med) var(--ease-spatial), height var(--d-med) var(--ease-spatial), opacity var(--d-instant);
-  opacity: 0; z-index: 1;
-}
-#nav-indicator::before, #nav-indicator::after { display: none; }
-.nav-label { display: none; } /* groups breathe through space instead */
-.nav-item {
-  position: relative; z-index: 1;
-  display: flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px;
-  background: transparent; border: none;
-  color: var(--faint); font-size: 0; /* label hidden; glyph carries it */
-  cursor: pointer;
-  transition: color var(--d-instant), transform var(--d-med) var(--ease-out);
-}
-.nav-item .glyph {
-  font-size: 1.02rem; line-height: 1;
-  transition: color var(--d-instant), transform var(--d-med) var(--ease-out), text-shadow var(--d-med);
-  display: inline-block;
-}
-/* press: the glyph compresses — the instrument acknowledges the touch */
-.nav-item:active .glyph { transform: scale(0.88); transition-duration: var(--d-instant); }
-/* contextual label: floats beside the glyph only while hovering */
-.nav-item:hover::after, .nav-item:focus-visible::after {
-  content: attr(title);
-  position: absolute; left: calc(100% + 14px); top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.74rem; letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--text); white-space: nowrap;
-  background: rgba(6, 10, 17, 0.92);
-  border: 1px solid var(--hairline);
-  padding: 0.45rem 0.7rem;
-  pointer-events: none;
-}
-.nav-item:hover { color: var(--text); }
-.nav-item:hover .glyph { color: var(--text); transform: translateX(3px); }
-.nav-item[aria-current="true"] { color: var(--text); }
-.nav-item[aria-current="true"] .glyph {
-  color: var(--accent);
-  text-shadow: 0 0 14px rgba(63, 224, 195, 0.55);
-  transform: scale(1.12);
-}
-.nav-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-.nav-item:focus-visible::after { display: none; } /* keep focus ring clean */
-#nav .nav-foot {
-  margin-top: auto; padding: 0.7rem 0; color: var(--whisper);
-  font-size: 0.62rem; font-family: var(--font-mono); letter-spacing: 0.1em;
-}
-
-/* ---------- main / views ---------- */
-#main { overflow: hidden; display: flex; min-width: 0; min-height: 0; position: relative; }
-.view { position: relative; flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding: 0.6rem 3rem 2.5rem; display: flex; flex-direction: column; gap: 1rem; }
-/* The UA stylesheet's [hidden]{display:none} loses to ".view{display:flex}".
-   Without this guard ALL 8 views render side-by-side in #main (the F3.7
-   overlap bug). Exactly one view is ever visible; the rest are display:none. */
-.view[hidden] { display: none; }
-/* view transitions: a spatial state shift — the new state arrives
-   laterally with blur settling into focus, WITH direction. Moving down
-   the rail (forward) enters from the right; moving back enters from
-   the left. The settle easing carries a hint of inertia: mass, not fade. */
-.view.view-enter { animation: viewInFwd var(--d-page) var(--ease-settle) both; }
-.view.view-enter[data-dir="back"] { animation: viewInBack var(--d-page) var(--ease-settle) both; }
-@keyframes viewInFwd {
-  from { opacity: 0; transform: translateX(30px) scale(0.992); filter: blur(7px); }
-  to { opacity: 1; transform: none; filter: none; }
-}
-@keyframes viewInBack {
-  from { opacity: 0; transform: translateX(-30px) scale(0.992); filter: blur(7px); }
-  to { opacity: 1; transform: none; filter: none; }
-}
-/* ---------- view titles: editorial, not header bars ----------
-   The view name is display type floating in space. The index is a whisper.
-   No border, no bar — the title IS the composition's anchor. */
-.view-head {
-  display: flex; align-items: baseline; gap: 1rem;
-  padding: 0; border-bottom: none; margin-bottom: 0.4rem;
-  padding-top: 3.2rem; /* clear the floating topbar */
-}
-.view-head h2 {
-  margin: 0;
-  font-size: clamp(1.9rem, 4.2vmin, 2.7rem);
-  font-weight: var(--display-w);
-  letter-spacing: var(--display-track);
+.brand-mark.down { border-color: var(--text-4); }
+.brand-mark.down::after { background: var(--text-4); opacity: 0.5; }
+#wordmark {
+  font-family: var(--font-mono);
+  font-size: 0.82rem; font-weight: 600;
+  letter-spacing: 0.42em;
   color: var(--text);
 }
-.view-head .vh-sub {
-  color: var(--faint); font-size: 0.82rem; letter-spacing: 0.04em;
-  font-weight: 300;
-}
-.view-head .spacer { flex: 1; }
-/* technical index: the view's position in the system — a whisper, not a badge */
-.view-index {
-  font-family: var(--font-mono); font-size: 0.62rem; color: var(--whisper);
-  letter-spacing: 0.2em;
-  border: none; padding: 0; flex: none;
-  order: -1;
-}
-
-/* ---------- system panel ---------- */
-/* ---------- telemetry field ----------
-   The old right column is gone. System signals float in the Home
-   environment — bottom-right, whisper-quiet, display-only
-   (pointer-events: none, so they never intercept the experience).
-   Visible only while Home is the active state. */
-#syspanel {
-  position: fixed; right: 2rem; bottom: 1.7rem; z-index: 5;
-  display: none;
-  flex-direction: column; gap: 1.05rem;
-  border: none; background: none; padding: 0;
-  pointer-events: none;
-  text-align: left;
-  max-width: 230px;
-}
-body:has(#view-home:not([hidden])) #syspanel { display: flex; }
-#syspanel .sys-panel { animation: telemRise var(--d-page) var(--ease-out) both; }
-#syspanel .sys-panel:nth-child(2) { animation-delay: 60ms; }
-#syspanel .sys-panel:nth-child(3) { animation-delay: 120ms; }
-#syspanel .sys-panel:nth-child(4) { animation-delay: 180ms; }
-@keyframes telemRise {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: none; }
-}
-#syspanel .status-line { font-size: 0.8rem; color: var(--muted); gap: 0.5rem; }
-#syspanel .kv { padding: 0.12rem 0; font-size: 0.78rem; }
-#syspanel .kv .k { color: var(--whisper); font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em; }
-#syspanel .kv .v { color: var(--muted); font-size: 0.74rem; }
-/* .panel-card: retired with the dashboard era (no usages remain) */
-.kv { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 0.88rem; padding: 0.45rem 0; border-bottom: 1px solid var(--hairline); }
-.kv .k { color: var(--whisper); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
-.kv .v { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); text-align: right; word-break: break-all; font-variant-numeric: tabular-nums; }
-/* ledger: a control group — title + ruled readouts, no container.
-   Groups separated by space; the hairline rules do the structuring. */
-.ledger { margin: 0 0 3rem; max-width: 640px; }
-.ledger-title {
-  display: flex; align-items: baseline; gap: 0.9rem;
-  font-size: 0.95rem; font-weight: 500; letter-spacing: 0.04em;
-  margin: 0 0 0.8rem; color: var(--text);
-}
-.ledger-index {
-  font-family: var(--font-mono); font-size: 0.64rem; color: var(--whisper);
-  letter-spacing: 0.08em; font-variant-numeric: tabular-nums;
-}
-.ledger .note { margin-top: 0.9rem; }
-.status-line { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; }
-
-/* ============================================================
-   JARVIS SYSTEM PANEL — the proprietary surface language.
-   The orb owns plasma; panels own geometry: technical corner
-   cuts, hairline contour, instrument header (index + tracked
-   label + live status pip), layered solid surfaces. Depth
-   through shade, never glassmorphism.
-   ============================================================ */
-/* ---------- dissolved surfaces ----------
-   .sys-panel no longer renders a box. It remains a semantic group;
-   grouping is expressed through proximity, whisper labels and alignment.
-   (dashboard era: cut-corner panels with energy ticks — retired) */
-.sys-panel {
-  position: relative;
-  background: none; border: none; padding: 0;
-  clip-path: none;
-}
-.sys-panel::before, .sys-panel::after { display: none; }
-.sys-panel:hover { border-color: transparent; }
-/* whisper group label — replaces the instrument header */
-.sp-head {
-  display: flex; align-items: baseline; gap: 0.6rem;
-  margin-bottom: 0.5rem; padding-bottom: 0;
-  border-bottom: none;
-}
-.sp-index { font-family: var(--font-mono); font-size: 0.6rem; color: var(--whisper); letter-spacing: 0.1em; }
-.sp-title {
+.brand .sub {
   font-family: var(--font-mono);
-  font-size: var(--label-size); letter-spacing: var(--label-track); color: var(--faint);
-  font-weight: 400; text-transform: uppercase;
+  font-size: var(--micro-size);
+  letter-spacing: var(--micro-track);
+  color: var(--text-4);
 }
-.sp-pip {
-  margin-left: auto; width: 5px; height: 5px; border-radius: 50%;
-  background: var(--whisper); flex: none; align-self: center;
-  transition: background var(--d-med), box-shadow var(--d-med);
+.top-right {
+  display: flex; align-items: baseline; gap: 1.1rem;
+  font-family: var(--font-mono); font-size: 0.78rem;
+  color: var(--text-3);
 }
-.sp-pip.on { background: var(--accent); box-shadow: 0 0 8px rgba(63, 224, 195, 0.5); }
-.sp-pip.ok { background: var(--ok); box-shadow: 0 0 8px rgba(63, 185, 80, 0.5); }
-.sp-pip.down { background: var(--err); box-shadow: 0 0 8px rgba(248, 81, 73, 0.5); }
-.sp-pip.warn { background: var(--warn); box-shadow: 0 0 8px rgba(210, 153, 34, 0.5); }
-/* compact variant: tighter whisper groups */
-.sys-panel.compact { padding: 0; }
-.sys-panel.spot:hover { background-image: none; }
+#clock { letter-spacing: 0.14em; font-variant-numeric: tabular-nums; }
+.top-sep { width: 28px; height: 1px; background: var(--hairline); align-self: center; }
+.backend-status { display: flex; align-items: center; gap: 0.55rem; letter-spacing: 0.18em; font-size: 0.68rem; text-transform: uppercase; }
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-4);
+  transition: background var(--d-med) var(--ease-out), box-shadow var(--d-med) var(--ease-out);
+}
+.dot.ok { background: var(--ok); box-shadow: 0 0 8px rgba(63, 185, 80, 0.7); }
+.dot.warn { background: var(--warn); box-shadow: 0 0 8px rgba(210, 153, 34, 0.7); }
+.dot.down { background: var(--err); box-shadow: 0 0 8px rgba(248, 81, 73, 0.7); }
 
-/* ============================================================
-   Home: command experience — orb as the center of the screen.
-   Layout: status line -> orb (hero) -> greeting -> thread -> composer.
-   When a thread exists, the orb settles smaller (class has-thread on view).
-   ============================================================ */
-#view-home {
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  padding: 2.5rem 1.6rem 2rem;
-  overflow: hidden; /* the thread scrolls internally, not the page */
+/* ---- left edge: command index. Function keys, not a sidebar ---- */
+#nav {
+  position: fixed; z-index: 30;
+  left: 2.2rem; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 0.35rem;
 }
-/* Home composition: the orb is the gravitational center. Everything else
-   — display greeting, thread, command line — orbits below it in a single
-   calm column. Asymmetry comes from the telemetry field (bottom-right)
-   and the thread's own rhythm (user right / system full-measure),
-   not from displaced chrome. */
-/* ============================================================
-   STATUS SYSTEM — one language for every state in the product.
-   ONLINE / OFFLINE / IDLE / PROCESSING / SUCCESS / WARNING / ERROR / UNAVAILABLE.
-   Typography: mono, tracked, uppercase. Icon: dot with aura.
-   Motion only with reason: processing sweeps, live breathes once.
-   ============================================================ */
-.stat {
-  display: inline-flex; align-items: center; gap: 0.5rem;
+#nav::before {
+  content: ""; position: absolute;
+  left: -1.1rem; top: 4%; bottom: 4%; width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--hairline) 18%, var(--hairline) 82%, transparent);
+}
+.nav-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem; letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-4); opacity: 0.75;
+  margin: 1.1rem 0 0.3rem;
+}
+.nav-label:first-child { margin-top: 0; }
+.nav-item {
+  position: relative;
+  display: flex; align-items: center; gap: 0.8rem;
+  background: none; border: 0; cursor: pointer;
+  padding: 0.42rem 0.2rem;
+  font-family: var(--font-mono); font-size: 0.72rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-3);
+  transition: color var(--d-instant) var(--ease-out), transform var(--d-instant) var(--ease-out);
+}
+.nav-item .glyph {
+  width: 1.5rem; text-align: center;
+  font-size: 0.85rem; color: var(--text-4);
+  transition: color var(--d-instant) var(--ease-out);
+}
+.nav-item:hover { color: var(--text); }
+.nav-item:hover .glyph { color: var(--accent); }
+.nav-item[aria-current="true"] { color: var(--text); }
+.nav-item[aria-current="true"] .glyph { color: var(--accent); }
+.nav-item[aria-current="true"]::before {
+  content: ""; position: absolute;
+  left: -1.1rem; top: 50%; transform: translateY(-50%);
+  width: 5px; height: 5px;
+  background: var(--accent);
+  transform: translateY(-50%) rotate(45deg);
+}
+#nav-indicator { display: none; }
+.nav-foot {
+  margin-top: 1.6rem;
+  font-family: var(--font-mono); font-size: 0.6rem;
+  letter-spacing: 0.28em; color: var(--text-4); opacity: 0.6;
+}
+
+/* ---- bottom edge: systems status line. A readout, not a panel ---- */
+#statusline {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; align-items: center; gap: 2.4rem;
+  padding: 1.1rem 2.2rem;
+  pointer-events: none;
+}
+#statusline::before {
+  content: ""; position: absolute;
+  left: 2.2rem; right: 2.2rem; top: 0; height: 1px;
+  background: linear-gradient(to right, transparent, var(--hairline-soft) 12%, var(--hairline-soft) 88%, transparent);
+}
+.sl-seg {
+  display: flex; align-items: baseline; gap: 0.7rem;
   font-family: var(--font-mono); font-size: 0.68rem;
-  letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap;
+  letter-spacing: 0.16em; color: var(--text-3);
+  text-transform: uppercase;
+  white-space: nowrap;
 }
-.stat .dot { width: 7px; height: 7px; }
-.stat-online { color: var(--ok); }
-.stat-online .dot { background: var(--ok); box-shadow: 0 0 8px var(--aura-ok); animation: pulse-dot 3.2s ease-in-out infinite; }
-.stat-offline, .stat-unavailable { color: var(--faint); }
-.stat-offline .dot, .stat-unavailable .dot { background: var(--faint); }
-.stat-idle { color: var(--muted); }
-.stat-idle .dot { background: var(--muted); }
-.stat-processing { color: var(--accent); }
-.stat-processing .dot { background: var(--accent); box-shadow: 0 0 8px var(--aura-accent); animation: statSweep 1.4s ease-in-out infinite; }
-@keyframes statSweep { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
-.stat-success { color: var(--ok); }
-.stat-success .dot { background: var(--ok); box-shadow: 0 0 8px var(--aura-ok); }
-.stat-warning { color: var(--warn); }
-.stat-warning .dot { background: var(--warn); box-shadow: 0 0 8px var(--aura-warn); }
-.stat-error { color: var(--err); }
-.stat-error .dot { background: var(--err); box-shadow: 0 0 8px var(--aura-err); }
+.sl-k { font-size: 0.56rem; letter-spacing: 0.3em; color: var(--text-4); }
+.sl-pip {
+  width: 5px; height: 5px; transform: rotate(45deg);
+  background: var(--text-4); align-self: center;
+  transition: background var(--d-med) var(--ease-out), box-shadow var(--d-med) var(--ease-out);
+}
+.sl-pip.on { background: var(--accent); box-shadow: 0 0 7px rgba(70, 230, 196, 0.8); }
+/* setPip() rewrites the pip className to "sp-pip ..." — same instrument mark */
+#statusline .sp-pip {
+  width: 5px; height: 5px; transform: rotate(45deg);
+  background: var(--text-4); align-self: center;
+  transition: background var(--d-med) var(--ease-out), box-shadow var(--d-med) var(--ease-out);
+}
+#statusline .sp-pip.on { background: var(--accent); box-shadow: 0 0 7px rgba(70, 230, 196, 0.8); }
+.sl-seg .dot { width: 5px; height: 5px; }
+#statusline .sl-seg:nth-child(1) { margin-right: auto; }
 
-/* #home-status: retired — its data lives in the floating telemetry field.
-   The rules below are kept only so the responsive override still parses. */
-#home-status { display: none; }
+/* ---- main field ---- */
+#main { position: absolute; inset: 0; z-index: 2; }
+.view {
+  position: absolute; inset: 0;
+  min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin; scrollbar-color: var(--text-4) transparent;
+}
+.view::-webkit-scrollbar { width: 8px; }
+.view::-webkit-scrollbar-thumb { background: rgba(237, 242, 249, 0.12); }
+.view::-webkit-scrollbar-track { background: transparent; }
+.view[hidden] { display: none; }
+/* ============================================================
+   HOME — the machine has two modes.
+   STANDBY: the instrument at rest. Orb as gravitational
+   center; identity set in display type; the field breathes.
+   OPERATIONS (has-thread): the machine reconfigures around
+   the task. Orb docks to a compact core; the live log takes
+   the central field. Same machine, different posture.
+   ============================================================ */
+#view-home { overflow: hidden; }
 
-/* orb hero: dead center, large. --orb-size shrinks when chatting. */
-#orb-block {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 1; flex: none;
-  transition: margin var(--d-page) var(--ease-out);
+/* ---- orbital field marks: the environment organized
+        around the core. Pure geometry, no data. ---- */
+.field-marks {
+  position: absolute; z-index: 1;
+  left: 33%; top: 44%;
+  width: 0; height: 0;
+  pointer-events: none;
+  transition: opacity var(--d-page) var(--ease-spatial);
+}
+.field-marks .ring {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(237, 242, 249, 0.055);
+  border-radius: 50%;
+}
+.field-marks .ring.r1 { width: 118vmin; height: 118vmin; }
+.field-marks .ring.r2 { width: 88vmin; height: 88vmin; border-style: dashed; border-color: rgba(237, 242, 249, 0.04); }
+.field-marks .ring.r3 { width: 62vmin; height: 62vmin; }
+/* tick marks on the outer ring — instrument furniture */
+.field-marks .ring.r1::before {
+  content: ""; position: absolute; inset: -1px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(237, 242, 249, 0.14) 0deg 0.6deg,
+    transparent 0.6deg 30deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 49.4%, black 49.4%, black 50%, transparent 50%);
+  mask: radial-gradient(circle, transparent 49.4%, black 49.4%, black 50%, transparent 50%);
+}
+.field-marks .cross {
+  position: absolute; left: 50%; top: 50%;
+  width: 130vmin; height: 1px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(to right, transparent, rgba(237, 242, 249, 0.035) 30%, rgba(237, 242, 249, 0.035) 70%, transparent);
+}
+.field-marks .cross.v { transform: translate(-50%, -50%) rotate(90deg); }
+
+/* ---- orb dock ---- */
+#orb-dock {
+  position: absolute; z-index: 2;
+  left: 33%; top: 44%;
+  transform: translate(-50%, -50%);
+  transition: left var(--d-page) var(--ease-spatial), top var(--d-page) var(--ease-spatial),
+              transform var(--d-page) var(--ease-spatial);
 }
 #orb-wrap {
-  --orb-size: clamp(240px, 44vmin, 400px);
-  position: relative; width: var(--orb-size); height: var(--orb-size); flex: none;
-  transition: width var(--d-page) var(--ease-out), height var(--d-page) var(--ease-out);
+  --orb-size: clamp(300px, 42vmin, 500px);
+  position: relative;
+  width: var(--orb-size); height: var(--orb-size);
+  transition: width var(--d-page) var(--ease-spatial), height var(--d-page) var(--ease-spatial);
 }
-#view-home.has-thread #orb-wrap { --orb-size: clamp(120px, 20vmin, 168px); }
-#view-home.has-thread #orb-block { margin-top: -0.4rem; }
-#orb { width: 100%; height: 100%; display: block; cursor: crosshair; }
+#orb { width: 100%; height: 100%; display: block; }
 #orb-label {
-  position: absolute; left: 0; right: 0; bottom: -1.5rem; text-align: center;
-  font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.32em; text-indent: 0.32em;
-  color: var(--faint);
-  transition: color var(--d-fast);
+  position: absolute; left: 50%; bottom: -2.1rem;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: var(--micro-size);
+  letter-spacing: var(--micro-track);
+  color: var(--text-4);
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color var(--d-med) var(--ease-out);
 }
 #orb-wrap[data-orb="active"] #orb-label { color: var(--accent); }
 #orb-wrap[data-orb="error"] #orb-label { color: var(--err); }
 
-#greeting { text-align: center; margin-top: 2.4rem; z-index: 1; }
-/* display voice: compressed type inside vast space (Linear school).
-   Large, light, tight — the system speaking, not a page title. */
-#greeting h2 {
+/* ---- identity: display typography as the primary UI ---- */
+.identity {
+  position: absolute; z-index: 3;
+  left: 54%; top: 44%;
+  transform: translateY(-50%);
+  max-width: 46%;
+  transition: left var(--d-page) var(--ease-spatial), top var(--d-page) var(--ease-spatial),
+              transform var(--d-page) var(--ease-spatial), opacity var(--d-med) var(--ease-out);
+}
+.id-kicker {
+  display: flex; align-items: center; gap: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: var(--micro-size);
+  letter-spacing: var(--micro-track);
+  text-transform: uppercase;
+  color: var(--text-4);
+  margin-bottom: 1.2rem;
+}
+.id-kicker .id-rule { width: 44px; height: 1px; background: var(--accent-dim); }
+#state-line { color: var(--text-3); letter-spacing: 0.22em; }
+#state-line:empty { display: none; }
+.id-display {
   margin: 0;
-  font-size: clamp(2.6rem, 7vmin, 4.4rem);
+  font-size: var(--d1);
   font-weight: var(--display-w);
   letter-spacing: var(--display-track);
-  line-height: 1.04;
+  line-height: 0.94;
   color: var(--text);
+  /* the wordmark carries a faint trace of the field */
+  text-shadow: 0 0 90px rgba(70, 230, 196, 0.10);
 }
-#greeting .g-sub {
-  color: var(--muted); font-size: 1rem; font-weight: 300;
-  margin-top: 0.9rem; letter-spacing: 0.02em;
+.id-sub {
+  margin: 1.4rem 0 0;
+  font-size: 1.02rem;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  max-width: 34ch;
 }
-#state-line {
-  font-family: var(--font-mono); font-size: 0.7rem; color: var(--whisper);
-  letter-spacing: 0.24em; text-transform: uppercase;
-  min-height: 1.3rem; margin-top: 1.1rem;
-}
-/* greeting reveal: word-by-word stagger on view entry (real page load only) */
-#view-home:not([hidden]) #greeting > * { animation: greetRise var(--d-page) var(--ease-out) both; }
-#view-home:not([hidden]) #greeting > *:nth-child(2) { animation-delay: 90ms; }
-#view-home:not([hidden]) #greeting > *:nth-child(3) { animation-delay: 170ms; }
-@keyframes greetRise { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+#greeting-title { color: var(--text); }
 
-/* thread: appears above the composer when messages exist */
-/* thread: events flowing above the command line. The fade mask keeps the
-   top edge dissolving into the environment — no hard scroll container. */
-#conversation {
-  display: none;
-  width: min(780px, 100%);
-  max-height: 38vh; overflow-y: auto;
-  flex-direction: column; gap: 1.6rem;
-  padding: 1.2rem 0.4rem 0.6rem;
-  z-index: 1;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, black 7%);
-  mask-image: linear-gradient(to bottom, transparent, black 7%);
-  scrollbar-width: thin;
-  scrollbar-color: var(--whisper) transparent;
+/* ---- conversation: hidden while the machine is at rest ---- */
+#conversation { display: none; }
+
+/* ---- command zone: anchored to the bottom of the field ---- */
+#composer-zone {
+  position: absolute; z-index: 4;
+  left: 50%; transform: translateX(-50%);
+  bottom: 6.5%;
+  width: min(880px, 88%);
+  transition: bottom var(--d-page) var(--ease-spatial), width var(--d-page) var(--ease-spatial);
 }
-#view-home.has-thread #conversation { display: flex; }
-/* ---------- AI RESPONSE SURFACE ----------
-   Assistant messages are the product's output surface: a signal line
-   (2px teal fading) marks the source; a technical index tick marks
-   the meta. User messages stay quiet: faint fill + hairline.
-   Entrance: 240ms opacity + rise + blur settle — one calm wave.
-   Error messages carry the FAILURE family (never a generic card). */
-/* ---------- CONVERSATION: system events, not chat bubbles ----------
-   The thread is a sequence of events in the environment.
-   - user: the human voice — compact, right-aligned, quieter. No box.
-   - assistant: an event of the system — full measure, flat on the
-     background, the system's voice (larger, lighter). A fading energy
-     line marks the source, not a container.
-   - system: centered whisper. error: color-only signaling (no banners,
-     no layout shifts — the FAILURE family is typographic).
-   Entrance: one calm wave — rise + blur settle. */
-.msg {
-  position: relative;
-  max-width: 100%; padding: 0;
-  white-space: pre-wrap; word-break: break-word;
-  font-size: 0.95rem; line-height: 1.6;
-  background: none; border: none; border-radius: 0;
-  animation: msgEnter 340ms var(--ease-out) both;
+
+/* ============ OPERATIONS MODE ============
+   has-thread: the machine reconfigures. Orb docks small
+   top-left as a live core; the log takes the field. */
+#view-home.has-thread .field-marks { opacity: 0; }
+#view-home.has-thread #orb-dock {
+  left: 7.2rem; top: 6.4rem;
+  transform: none;
 }
-@keyframes msgEnter {
-  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
-  to { opacity: 1; transform: none; filter: blur(0); }
+#view-home.has-thread #orb-wrap { --orb-size: 118px; }
+#view-home.has-thread #orb-label { display: none; }
+#view-home.has-thread .identity {
+  left: calc(7.2rem + 150px); top: 6.4rem;
+  transform: none;
+  max-width: none;
 }
-.msg.user {
-  align-self: flex-end; text-align: right;
-  max-width: 76%;
-  color: var(--muted);
-  font-size: 0.94rem;
-  padding-right: 1.1rem;
+#view-home.has-thread .id-display,
+#view-home.has-thread .id-sub {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
-.msg.user::after {
-  content: ""; position: absolute; right: 0; top: 0.35rem; bottom: 0.35rem; width: 2px;
-  background: linear-gradient(180deg, var(--faint), transparent 85%);
-  opacity: 0.5;
-}
-.msg.assistant {
-  align-self: stretch;
-  color: var(--text);
-  font-size: 1.05rem; font-weight: 350; line-height: 1.72;
-  letter-spacing: 0.008em;
-  padding-left: 1.3rem;
-}
-.msg.assistant::before {
-  content: ""; position: absolute; left: 0; top: 0.35rem; bottom: 0.35rem; width: 2px;
-  background: linear-gradient(180deg, var(--accent), transparent 82%);
-  opacity: 0.75; pointer-events: none;
-}
-.msg.system {
-  align-self: center; text-align: center;
-  color: var(--whisper); font-size: 0.8rem; font-weight: 300;
-  letter-spacing: 0.06em; max-width: 88%;
-}
-.msg.error {
-  align-self: stretch;
-  color: #ffb4ab; font-size: 0.95rem;
-  padding-left: 1.3rem;
-}
-.msg.error::before {
-  content: ""; position: absolute; left: 0; top: 0.35rem; bottom: 0.35rem; width: 2px;
-  background: linear-gradient(180deg, var(--err), transparent 82%);
-  opacity: 0.8; pointer-events: none;
-}
-.msg .meta {
+#view-home.has-thread .id-kicker { margin-bottom: 0; }
+#view-home.has-thread #conversation {
   display: block;
-  font-size: 0.64rem; color: var(--whisper);
-  margin-top: 0.5rem; padding-top: 0;
-  border-top: none; font-family: var(--font-mono); letter-spacing: 0.14em;
+  position: absolute; z-index: 3;
+  left: 50%; transform: translateX(-50%);
+  top: 11.5rem; bottom: 12.5rem;
+  width: min(880px, 88%);
+  overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin; scrollbar-color: var(--text-4) transparent;
+  padding-right: 1rem;
+  mask-image: linear-gradient(to bottom, transparent, black 4%, black 96%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 4%, black 96%, transparent);
 }
-.msg .meta::before { display: none; }
-.msg.user .meta { text-align: right; }
+#view-home.has-thread #composer-zone { bottom: 4.5%; }
 
-/* ---------- COMMAND SURFACE: the orb's instrument, not a form ----------
-   Two surface families: panels own technical geometry; the command
-   surface shares the orb's organic register (it is the orb's mouth).
-   Energy line = distilled plasma filament: idle faint, focus lit,
-   typing brighter, processing sweeping. Every state is real. */
-@property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
-/* ---------- COMMAND SURFACE: a command line, not a form ----------
-   No box. The composer is a line in the environment: prompt glyph,
-   text, dispatch key. The energy line underneath is the orb's filament
-   distilled — idle invisible, focus lit, typing bright, processing
-   sweeping. The system perceives presence through light, not chrome. */
-#composer-zone { width: min(760px, 100%); z-index: 1; margin-top: 2.4rem; }
+/* ============================================================
+   COMMAND SURFACE — a command line, not a form.
+   Idle: a quiet instrument line. Typing: the surface
+   transforms — energy line, armed key, channel lit.
+   Not a color swap: layout, weight and light all shift.
+   ============================================================ */
+.cmd-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+.cmd-label {
+  font-family: var(--font-mono);
+  font-size: var(--micro-size);
+  letter-spacing: var(--micro-track);
+  color: var(--text-4);
+  text-transform: uppercase;
+  transition: color var(--d-med) var(--ease-out);
+}
+.cmd-channel {
+  font-family: var(--font-mono);
+  font-size: var(--micro-size);
+  letter-spacing: 0.22em;
+  color: var(--text-4);
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 0.6rem;
+  transition: color var(--d-med) var(--ease-out);
+}
+.cmd-channel::before {
+  content: ""; width: 5px; height: 5px;
+  background: var(--text-4);
+  transform: rotate(45deg);
+  transition: background var(--d-med) var(--ease-out), box-shadow var(--d-med) var(--ease-out);
+}
 #composer {
   position: relative;
-  display: flex; gap: 0.85rem; align-items: flex-end;
-  background: none; border: none; border-radius: 0;
-  border-bottom: 1px solid var(--hairline);
-  padding: 0.9rem 0.15rem;
-  backdrop-filter: none;
-  transition: border-color var(--d-med);
+  display: flex; align-items: flex-end; gap: 1rem;
+  border-top: 1px solid var(--hairline);
+  padding: 1.05rem 0.2rem 1.15rem;
+  transition: border-color var(--d-med) var(--ease-out), padding var(--d-med) var(--ease-out),
+              background var(--d-med) var(--ease-out);
 }
-#composer:hover { border-bottom-color: rgba(255, 255, 255, 0.16); }
-#composer:focus-within { border-bottom-color: var(--accent-dim); }
-/* energy line: the filament. Lives on the baseline. */
-.cmd-energy {
-  position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
-  opacity: 0;
-  transition: opacity var(--d-med);
-  pointer-events: none;
+/* the surface lifts and opens when it becomes active */
+#composer:focus-within {
+  border-top-color: var(--accent-dim);
+  padding-top: 1.3rem;
+  background: linear-gradient(to bottom, var(--accent-ghost), transparent 70%);
 }
-/* prompt glyph: the surface speaks command, not web form */
 .cmd-prompt {
-  flex: none; align-self: center;
-  font-family: var(--font-mono); font-size: 1.35rem; line-height: 1;
-  color: var(--whisper); padding: 0 0.1rem;
-  transition: color var(--d-med), text-shadow var(--d-med);
-  user-select: none;
+  font-family: var(--font-mono);
+  font-size: 1.35rem; font-weight: 300;
+  color: var(--text-4);
+  line-height: 1.4;
+  padding-bottom: 0.1rem;
+  transition: color var(--d-med) var(--ease-out), text-shadow var(--d-med) var(--ease-out);
 }
-#composer:hover .cmd-prompt { color: var(--faint); }
-#composer:focus-within .cmd-energy { opacity: 1; }
 #composer:focus-within .cmd-prompt {
   color: var(--accent);
-  text-shadow: 0 0 12px rgba(63, 224, 195, 0.6);
+  text-shadow: 0 0 14px rgba(70, 230, 196, 0.6);
 }
-#composer.typing .cmd-energy { opacity: 1; }
-#composer.busy { border-bottom-color: var(--accent-dim); }
-#composer.busy .cmd-energy {
-  opacity: 1;
-  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
-  background-size: 200% 100%;
-  animation: energySweep 1.6s linear infinite;
-}
-@keyframes energySweep {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-/* beam: the processing pulse — a glow traveling the line (real state only).
-   (dashboard era: conic border around a box — retired) */
-#composer.beam::before { display: none; }
-@property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
 #input {
-  flex: 1; resize: none; background: transparent; color: var(--text);
-  border: none; outline: none; padding: 0.5rem 0.1rem;
-  font: inherit; font-size: 1.02rem; font-weight: 340; letter-spacing: 0.01em;
-  min-height: 2.2rem; max-height: 9rem; line-height: 1.5;
+  flex: 1;
+  background: none; border: 0; outline: 0; resize: none;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 1.06rem; font-weight: 300; letter-spacing: 0.02em;
+  line-height: 1.45;
+  max-height: 9rem;
+  padding: 0;
 }
+#input::placeholder { color: var(--text-4); font-weight: 300; }
 #input:disabled { opacity: 0.55; }
-#input::placeholder { color: var(--whisper); font-weight: 300; }
-/* dispatch key: one control that morphs with the real request state.
-   Idle = quiet mono key; hover = brightens toward white then teal;
-   stop = danger morph (real cancellation state). No box, no fill —
-   the key is a gesture, not a button. */
+/* DISPATCH key — a physical key on the instrument */
 #send {
-  position: relative; flex: none;
-  width: auto; height: auto;
-  background: none; border: none; border-radius: 0; box-shadow: none;
-  color: var(--whisper);
-  font-family: var(--font-mono); font-size: 1.45rem; line-height: 1;
-  padding: 0.6rem 0.3rem; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  transition: color var(--d-fast), transform var(--d-fast) var(--ease-out), opacity var(--d-fast);
-  overflow: visible;
-}
-#send::after { display: none; }
-#send:hover:not(:disabled) { color: var(--accent); transform: translateY(-1px); box-shadow: none; }
-#send:active:not(:disabled) { transform: translateY(0) scale(0.92); }
-#send:disabled { opacity: 0.4; cursor: default; }
-#send.is-stop { color: var(--err); background: none; font-size: 1.1rem; }
-#send.is-stop:hover:not(:disabled) { color: #ff8a80; }
-/* kbd hints: whisper, not keys */
-#composer-hints {
-  display: flex; justify-content: center; gap: 1.2rem; margin-top: 0.8rem;
-  font-family: var(--font-mono); font-size: 0.62rem; color: var(--whisper);
-  letter-spacing: 0.1em;
-}
-#composer-hints kbd {
-  font-family: inherit; font-size: inherit; color: var(--faint);
-  border: none; border-radius: 0; padding: 0; background: none;
-}
-/* ============================================================
-   BUTTON SYSTEM — one language, every view.
-   PRIMARY: key-like teal, the single functional accent.
-   SECONDARY: solid surface, hairline contour.
-   GHOST: discrete, borderless until hover.
-   ICON: compact 34px control.
-   DANGER: destructive / cancel — red is reserved for this.
-   Microinteractions: 1px shift, glow, icon motion. Never gamer.
-   ============================================================ */
-.btn, .btn-secondary, .btn-ghost, .btn-icon, .btn-danger {
-  font: inherit; cursor: pointer; white-space: nowrap;
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  transition: transform var(--d-fast) var(--ease-out), box-shadow var(--d-fast),
-    background var(--d-fast), border-color var(--d-fast), color var(--d-fast), opacity var(--d-fast);
-}
-.btn:active:not(:disabled), .btn-secondary:active:not(:disabled),
-.btn-ghost:active:not(:disabled), .btn-icon:active:not(:disabled),
-.btn-danger:active:not(:disabled) { transform: translateY(1px) scale(0.98); }
-/* PRIMARY / SYSTEM ACTION */
-/* PRIMARY: the single functional accent — an instrument key, not a
-   glossy button. Hairline contour, teal voice, fills only on hover. */
-.btn {
-  background: none; border: 1px solid rgba(63, 224, 195, 0.35); border-radius: 0;
-  color: var(--accent); padding: 0.65rem 1.3rem;
-  font-family: var(--font-mono); font-size: 0.7rem; font-weight: 500;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  box-shadow: none; cursor: pointer;
-  transition: background var(--d-fast), border-color var(--d-fast), color var(--d-fast);
-}
-.btn:hover:not(:disabled) {
-  background: rgba(63, 224, 195, 0.08); border-color: var(--accent);
-  transform: none; box-shadow: none;
-}
-.btn:active:not(:disabled) { background: rgba(63, 224, 195, 0.14); }
-.btn:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
-/* SECONDARY */
-.btn-secondary {
-  background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
-  color: var(--text); border: 1px solid var(--panel-line); border-radius: 9px;
-  padding: 0.6rem 1.05rem; font-size: 0.86rem; font-weight: 550;
-}
-.btn-secondary:hover:not(:disabled) { border-color: #33477a; background: linear-gradient(180deg, #16223a, var(--surface-2)); transform: translateY(-1px); }
-.btn-secondary:disabled { opacity: 0.4; cursor: default; }
-/* GHOST */
-.btn-ghost {
-  background: transparent; color: var(--muted);
-  border: 1px solid transparent; border-radius: 9px;
-  padding: 0.6rem 0.95rem; font-size: 0.85rem;
-}
-.btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--panel-line); background: rgba(255, 255, 255, 0.04); }
-.btn-ghost:disabled { opacity: 0.4; cursor: default; }
-/* ICON */
-.btn-icon {
-  width: 34px; height: 34px; padding: 0; flex: none;
-  background: transparent; color: var(--muted);
-  border: 1px solid var(--panel-line); border-radius: 8px; font-size: 1rem;
-}
-.btn-icon:hover:not(:disabled) { color: var(--text); border-color: #33477a; background: rgba(255,255,255,0.04); }
-.btn-icon:hover:not(:disabled) > * { transform: translateX(1px); }
-.btn-icon > * { transition: transform var(--d-fast) var(--ease-out); }
-.btn-icon:disabled { opacity: 0.4; cursor: default; }
-/* DANGER / CANCEL — red carries the FAILURE family only */
-.btn-danger {
-  background: rgba(248, 81, 73, 0.1); color: #ffb4ab;
-  border: 1px solid rgba(248, 81, 73, 0.45); border-radius: 9px;
-  padding: 0.6rem 1.05rem; font-size: 0.86rem; font-weight: 550;
-}
-.btn-danger:hover:not(:disabled) { background: rgba(248, 81, 73, 0.16); border-color: rgba(248, 81, 73, 0.7); transform: translateY(-1px); }
-.btn-danger:disabled { opacity: 0.4; cursor: default; }
-/* LOADING: reserved for real async actions (class toggled by JS only then) */
-.btn.is-loading, .btn-secondary.is-loading { position: relative; color: transparent; pointer-events: none; }
-.btn.is-loading::after, .btn-secondary.is-loading::after {
-  content: ""; position: absolute; width: 16px; height: 16px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.35); border-top-color: currentColor;
-  animation: spin 0.9s linear infinite;
-}
-.btn-secondary.is-loading::after { border-color: rgba(255,255,255,0.15); border-top-color: var(--accent); }
-button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-/* ============================================================
-   Lists — instrument readouts, not cards. Each list gets a
-   CSS-counter index column (no JS changes): sessions read as an
-   explorer, tasks as a monitor, activity/audit as traces.
-   ============================================================ */
-.toolbar { display: flex; gap: 1.4rem; align-items: center; }
-/* toolbar actions: quiet text, not buttons. Hover = underline energy, not box. */
-.toolbar .btn-ghost, .toolbar .btn {
-  background: none; border: none; border-radius: 0; padding: 0.2rem 0;
-  font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--faint); cursor: pointer; position: relative;
-  font-family: var(--font-mono);
-  transition: color var(--d-instant);
-}
-.toolbar .btn-ghost::after, .toolbar .btn::after {
-  content: ""; position: absolute; left: 0; right: 100%; bottom: 0; height: 1px;
-  background: var(--accent); transition: right var(--d-med) var(--ease-out);
-}
-.toolbar .btn-ghost:hover:not(:disabled), .toolbar .btn:hover:not(:disabled) {
-  color: var(--text); background: none; border: none; box-shadow: none; transform: none;
-}
-.toolbar .btn-ghost:hover:not(:disabled)::after, .toolbar .btn:hover:not(:disabled)::after { right: 0; }
-.toolbar .btn { color: var(--accent-dim); }
-.toolbar .btn:hover:not(:disabled) { color: var(--accent); }
-/* ============================================================
-   INDEX LANGUAGE — internal views are indexes, not tables.
-   Rows are entries in a ledger: number, voice, metadata, state.
-   Grouping through alignment and space. Hover is a brightening
-   of the entry (text + index), never a fill. The only motion is
-   a 4px lateral shift on clickable entries.
-   ============================================================ */
-/* ============================================================
-   MOTION LANGUAGE — a vocabulary, not decoration.
-   Every animation expresses cause → effect: a view appears, an
-   entry joins a list, a message arrives, a state changes.
-   - viewIn: the signature spatial shift (navigation)
-   - greetRise: display type settles (Home)
-   - msgEnter: a system event arrives (thread)
-   - rise: an entry joins an index (lists) — calm, no blur
-   - energySweep: processing (composer line) — real state only
-   - pulse-dot / statSweep: live / processing dots — real states only
-   Duration ladder: --d-fast (160) micro · --d-med (260) state ·
-   --d-slow (420) entrances · --d-page (520) spatial. Never linear
-   on UI transitions; exits faster than enters; stagger capped.
-   ============================================================ */
-@keyframes rise {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes ledgerRise {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: none; }
-}
-/* ============================================================
-   SIGNAL LANGUAGE — proprietary telemetry marks.
-   Not badges, not icons from a library: tiny geometric signals
-   drawn in SVG/CSS, each bound to a REAL system state or event.
-   - .micro: the system voice for labels (mono, tracked, whisper)
-   - .sig-glyph: state as geometry (11px SVG, currentColor)
-   - .sig-tick: a transient event marker (born on real events)
-   - .lifecycle: 3-segment process indicator (queued→active→done)
-   - .tx-pulse: transmission energy (composer → orb on send)
-   Color is the event; geometry is the instrument. Nothing here
-   renders without a real state behind it.
-   ============================================================ */
-.micro {
-  font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400;
-  letter-spacing: 0.22em; text-transform: uppercase; color: var(--whisper);
-  white-space: nowrap;
-}
-.sig-glyph {
-  width: 11px; height: 11px; flex: none; display: inline-block;
-  vertical-align: -1px; color: var(--muted);
-}
-.sig-glyph.ok { color: var(--ok); }
-.sig-glyph.err { color: var(--err); }
-.sig-glyph.warn { color: var(--warn); }
-.sig-glyph.info { color: var(--info); }
-.sig-glyph.accent { color: var(--accent); }
-/* live glyphs breathe — the breath IS the state (running, not decoration) */
-.sig-glyph.live { animation: sig-breathe 1.8s ease-in-out infinite; }
-@keyframes sig-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
-/* transient event tick: born on a real event, dissipates */
-.sig-tick {
-  width: 2px; height: 14px; flex: none;
-  background: currentColor; border-radius: 1px;
-  animation: tick-life 1.6s var(--ease-out) both;
-}
-@keyframes tick-life {
-  0% { opacity: 0; transform: scaleY(0.2); }
-  18% { opacity: 1; transform: scaleY(1); }
-  70% { opacity: 0.9; }
-  100% { opacity: 0; transform: scaleY(0.6); }
-}
-/* lifecycle: three segments, filled by real process state.
-   [queued][active][terminal] — the machine's own progress dialect. */
-.lifecycle {
-  display: inline-flex; align-items: center; gap: 3px;
   flex: none;
-}
-.lifecycle i {
-  width: 14px; height: 3px; border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  transition: background var(--d-med), box-shadow var(--d-med);
-}
-.lifecycle i.on { background: currentColor; }
-.lifecycle i.on-glow { box-shadow: 0 0 8px currentColor; }
-/* transmission pulse: energy released on send, composer → orb */
-.tx-pulse {
-  position: fixed; z-index: 60; pointer-events: none;
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--accent); box-shadow: 0 0 14px var(--aura-accent);
-  margin: -3px 0 0 -3px;
-}
-/* directional marker: hidden until interaction reveals it */
-.dir-marker {
-  font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent);
-  opacity: 0; transform: translateX(-6px);
-  transition: opacity var(--d-fast), transform var(--d-fast) var(--ease-out);
-  flex: none;
-}
-.row.clickable:hover .dir-marker,
-.row.clickable:focus-visible .dir-marker { opacity: 1; transform: none; }
-/* ============================================================
-   DATA ALIVE — state changes are events, not text swaps.
-   - .state-changed: a task crossed a lifecycle boundary (real diff)
-   - .born: a new event crosses the spine into the timeline
-   - .swap: a changed value slips into place (numbers have behavior)
-   ============================================================ */
-.row.state-changed { animation: stateChange 1.4s var(--ease-out) both; }
-@keyframes stateChange {
-  0% { background: rgba(63, 224, 195, 0.13); }
-  100% { background: transparent; }
-}
-.row.born { animation: born var(--d-med) var(--ease-out) both; }
-@keyframes born {
-  from { opacity: 0; transform: translateX(-16px); }
-  to { opacity: 1; transform: none; }
-}
-.row.born .ev-dot { animation: dotBirth 1s var(--ease-out) both; }
-@keyframes dotBirth {
-  0% { transform: scale(0); }
-  55% { transform: scale(1.7); }
-  100% { transform: scale(1); }
-}
-.swap { display: inline-block; animation: morphSwap 0.34s var(--ease-out) both; }
-@keyframes morphSwap {
-  0% { opacity: 0; transform: translateY(7px); filter: blur(2px); }
-  100% { opacity: 1; transform: none; filter: none; }
-}
-/* index language */
-.list { display: flex; flex-direction: column; counter-reset: jrow; }
-/* ledgers and instrument groups enter as composed units */
-.view:not([hidden]) .ledger { animation: ledgerRise var(--d-slow) var(--ease-out) both; }
-.view:not([hidden]) .ledger:nth-of-type(2) { animation-delay: 80ms; }
-.view:not([hidden]) .ledger:nth-of-type(3) { animation-delay: 160ms; }
-.view:not([hidden]) .ledger:nth-of-type(4) { animation-delay: 240ms; }
-.view:not([hidden]) .nexus-hero { animation: ledgerRise var(--d-slow) var(--ease-out) both; }
-.row {
-  border-bottom: 1px solid var(--hairline);
-  padding: 1.05rem 0.2rem;
-  display: flex; align-items: baseline; gap: 1.2rem;
-  transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-out);
-  animation: rise var(--d-med) var(--ease-out) both;
-  position: relative;
-  border-radius: 0;
+  width: 3.4rem; height: 3.4rem;
+  display: flex; align-items: center; justify-content: center;
   background: none;
+  border: 1px solid var(--hairline);
+  color: var(--text-3);
+  font-family: var(--font-mono); font-size: 1rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: border-color var(--d-instant) var(--ease-out), color var(--d-instant) var(--ease-out),
+              background var(--d-instant) var(--ease-out), transform var(--d-instant) var(--ease-spring),
+              box-shadow var(--d-med) var(--ease-out);
 }
-/* instrument index column */
-.row::before {
-  counter-increment: jrow;
-  content: counter(jrow, decimal-leading-zero);
-  font-family: var(--font-mono); font-size: 0.64rem; color: var(--whisper);
-  letter-spacing: 0.06em; flex: none; width: 2em; text-align: right;
-  font-variant-numeric: tabular-nums;
-  transition: color var(--d-fast);
+#send:hover { border-color: var(--accent-dim); color: var(--accent); }
+#send:active { transform: scale(0.93); }
+/* armed: the key is ready because there is a command */
+#composer-zone.typing #send {
+  border-color: var(--accent);
+  color: var(--bg);
+  background: var(--accent);
+  box-shadow: 0 0 22px rgba(70, 230, 196, 0.35);
 }
-.row:hover { background: none; border-bottom-color: rgba(255, 255, 255, 0.1); }
-.row:hover::before { color: var(--accent-dim); }
-.row.clickable { cursor: pointer; }
-.row.clickable:hover { transform: translateX(4px); }
-/* press compression: the row has mass — it yields slightly under the finger */
-.row.clickable:active { transform: translateX(4px) scale(0.997); transition-duration: var(--d-instant); }
-.row .r-title { font-size: 0.95rem; color: var(--text); font-weight: 400; transition: color var(--d-fast); }
-.row .r-meta { font-size: 0.68rem; color: var(--whisper); font-family: var(--font-mono); margin-top: 0.3rem; letter-spacing: 0.06em; }
-.row .r-main { flex: 1; min-width: 0; }
-.row .r-side { flex: none; display: flex; align-items: center; gap: 0.5rem; }
-/* states: typographic, not tags. A dot + tracked mono — color is
-   the event, the dot is the instrument. No borders, no fills. */
-.badge {
-  font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.16em; text-transform: uppercase;
-  padding: 0; border: none; border-radius: 0; background: none;
-  color: var(--muted);
-  white-space: nowrap;
-  clip-path: none;
-  display: inline-flex; align-items: center; gap: 0.55rem;
+#composer-zone.typing .cmd-label { color: var(--accent); }
+#composer-zone.typing .cmd-channel { color: var(--text-2); }
+#composer-zone.typing .cmd-channel::before {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(70, 230, 196, 0.9);
 }
-.badge::before {
-  content: ""; width: 5px; height: 5px; border-radius: 50%;
-  background: currentColor; flex: none;
+/* stop: the key becomes the brake — one control, no confusion */
+#send.is-stop {
+  border-color: var(--err);
+  color: var(--err);
+  background: rgba(248, 81, 73, 0.08);
+  box-shadow: 0 0 18px rgba(248, 81, 73, 0.25);
 }
-.badge.ok { color: var(--ok); }
-.badge.ok::before { box-shadow: 0 0 6px var(--aura-ok); }
-.badge.warn { color: var(--warn); }
-.badge.warn::before { box-shadow: 0 0 6px var(--aura-warn); }
-.badge.err { color: var(--err); }
-.badge.err::before { box-shadow: 0 0 6px var(--aura-err); }
-.badge.info { color: var(--info); }
-.badge.info::before { box-shadow: 0 0 6px rgba(88, 166, 255, 0.35); }
-.badge.accent { color: var(--accent); }
-.badge.accent::before { box-shadow: 0 0 6px var(--aura-accent); animation: pulse-dot 2s ease-in-out infinite; }
-/* current session: the entry speaks — title brightens, index lights */
-.row.is-current .r-title { color: var(--accent); }
-.row.is-current::before { color: var(--accent); }
-/* task monitor: status edge retired — the state's own voice carries it */
-#task-list .row:has(.badge.ok),
-#task-list .row:has(.badge.err),
-#task-list .row:has(.badge.warn),
-#task-list .row:has(.badge.accent),
-#task-list .row:has(.badge.info) { border-left: none; }
-/* empty state: the instrument at rest — no frame, just voice */
-.empty {
-  color: var(--whisper); font-size: 0.92rem; font-weight: 300;
-  padding: 4rem 1.6rem; text-align: center;
-  border: none; border-radius: 0; background: none;
-  display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
+/* energy trace under the command line */
+.cmd-trace {
+  height: 1px; margin-top: -1px;
+  background: linear-gradient(to right, var(--accent), var(--accent-strong), transparent 85%);
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform var(--d-slow) var(--ease-out);
+  opacity: 0.9;
 }
-.empty .e-glyph {
-  font-size: 1.4rem; color: var(--whisper); line-height: 1;
-  -webkit-text-stroke: 0;
+#composer-zone.typing .cmd-trace { transform: scaleX(1); }
+/* busy: the trace sweeps — the machine is transmitting */
+#composer.busy .cmd-trace, #composer.beam .cmd-trace {
+  transform: scaleX(1);
+  animation: trace-sweep 1.4s var(--ease-in-out) infinite;
+}
+@keyframes trace-sweep {
+  0% { opacity: 0.25; } 50% { opacity: 1; } 100% { opacity: 0.25; }
+}
+#composer-hints {
+  display: flex; gap: 1.6rem;
+  margin-top: 0.85rem;
+  font-family: var(--font-mono); font-size: 0.62rem;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-4);
   opacity: 0.7;
 }
-.empty .e-title { color: var(--muted); font-size: 0.95rem; font-weight: 400; letter-spacing: 0.02em; }
-.empty .e-sub { font-size: 0.78rem; max-width: 38ch; font-family: var(--font-mono); color: var(--whisper); }
-.note { color: var(--faint); font-size: 0.8rem; }
-
-/* skeleton loading rows — lines dissolving in, not boxes */
-.skel {
-  border-radius: 0; height: 2.8rem; margin: 0.5rem 0;
-  border-bottom: 1px solid var(--hairline);
-  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%);
-  background-size: 200% 100%;
-  animation: skelShimmer 1.4s linear infinite;
-}
-@keyframes skelShimmer { from { background-position: 200% 0; } to { background-position: -20% 0; } }
-
-/* spotlight hover on cards (subtle, pointer-only) */
-.spot { position: relative; overflow: hidden; }
-.spot::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), rgba(63, 224, 195, 0.07), transparent 65%);
-  opacity: 0; transition: opacity var(--d-med);
-}
-.spot:hover::after { opacity: 1; }
-
-/* ---------- per-view compositions ----------
-   Same index language, different temperament per view. */
-
-/* SESSIONS: a calm index of conversations — generous, unhurried */
-#view-sessions .list { max-width: 880px; }
-#view-sessions .row { padding: 1.3rem 0.2rem; }
-#view-sessions .row .r-title { font-size: 1.02rem; font-weight: 350; letter-spacing: 0.01em; }
-
-/* TASKS: the process monitor — denser, status-forward, technical */
-#view-tasks .list { max-width: 960px; }
-#view-tasks .row { padding: 0.85rem 0.2rem; align-items: center; }
-#view-tasks .row .r-title { font-family: var(--font-mono); font-size: 0.86rem; letter-spacing: 0.02em; }
-#view-tasks .row .r-meta { margin-top: 0.2rem; }
-
-/* MEMORY: the archive — entries as catalog records, airy, quiet */
-#view-memory .list { max-width: 820px; }
-#view-memory .row { padding: 1.2rem 0.2rem; border-left: none; }
-#view-memory .row:hover { border-left: none; }
-#view-memory .row .r-title { font-family: var(--font-sans); font-size: 0.98rem; font-weight: 350; line-height: 1.6; }
-#view-memory .row .r-meta { color: var(--whisper); }
-
-/* ACTIVITY: a timeline — events on a spine, not rows in a table */
-#activity-list { position: relative; max-width: 900px; }
-#activity-list::before {
-  content: ""; position: absolute; left: 2.2em; top: 1.4rem; bottom: 1.4rem;
-  width: 1px; background: var(--hairline);
-}
-#activity-list .row { margin-left: 3.4em; padding: 0.7rem 0.2rem; align-items: baseline; }
-#activity-list .row::before { display: none; } /* the spine replaces the index */
-#activity-list .row { font-family: var(--font-mono); font-size: 0.8rem; }
-#activity-list .ev-time { color: var(--whisper); flex: none; font-variant-numeric: tabular-nums; font-size: 0.72rem; }
-#activity-list .ev-type { color: var(--text); flex: 1; }
-#activity-list .ev-dot {
-  position: absolute; left: -3.4em; margin-left: calc(2.2em - 4px); top: 1.15rem;
-  width: 8px; height: 8px; border-radius: 50%; flex: none;
-  box-shadow: 0 0 8px currentColor;
-  background: var(--bg); border: 1px solid currentColor;
+#composer-hints kbd {
+  font-family: inherit;
+  border: 1px solid var(--hairline);
+  padding: 0.1rem 0.42rem;
+  margin-right: 0.35rem;
+  color: var(--text-3);
 }
 
-/* AUDIT: the execution trace — dense, mono, ledger-like.
-   Premium may be dense: this view earns its density. */
-#view-audit .list { max-width: none; }
-#view-audit .note { max-width: 90ch; margin-bottom: 1.5rem; }
-#audit-list .row { align-items: flex-start; padding: 0.55rem 0.2rem; }
-#audit-list .row::before { color: var(--whisper); }
-.audit-ev { font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.65; word-break: break-word; }
-.audit-ev .ak { color: var(--whisper); }
-.audit-ev .av-ok { color: var(--ok); } .audit-ev .av-err { color: var(--err); }
-.audit-ev .av-warn { color: var(--warn); } .audit-ev .av-info { color: var(--info); }
-
-/* NEXUS view — an instrument, not a dashboard card, and never a mini-orb.
-   The state is carried by typography and a signal line. The orb alone
-   owns the circular plasma register. */
-/* NEXUS view — an instrument, not a dashboard card, and never a mini-orb.
-   The state is carried by typography and a signal line. The orb alone
-   owns the circular plasma register. */
-.nexus-hero {
-  display: flex; flex-direction: column; gap: 1.4rem;
-  padding: 2.5rem 0 2rem;
-  align-items: flex-start;
+/* ============================================================
+   CONVERSATION — a living system log, not chat bubbles.
+   USER / time  → command
+   JARVIS / time → response
+   The log is part of the operating environment.
+   ============================================================ */
+.msg {
+  position: relative;
+  padding: 1.35rem 0 1.35rem 5.2rem;
+  border-top: 1px solid var(--hairline-soft);
+  font-size: 0.98rem; font-weight: 300;
+  line-height: 1.7;
+  color: var(--text-2);
+  white-space: pre-wrap; word-break: break-word;
 }
-.nexus-state {
-  font-size: clamp(2rem, 5vmin, 3.2rem);
-  font-weight: 250; letter-spacing: -0.02em; line-height: 1.1;
-  color: var(--text);
-  margin: 0;
+.msg:first-child { border-top: 0; }
+/* role marker on the left rail */
+.msg::before {
+  position: absolute; left: 0; top: 1.55rem;
+  font-family: var(--font-mono);
+  font-size: var(--micro-size);
+  letter-spacing: var(--micro-track);
+  text-transform: uppercase;
+  color: var(--text-4);
 }
-.nexus-state.is-up { color: var(--ok); }
-.nexus-state.is-down { color: var(--err); }
-.nexus-signal {
-  width: min(420px, 100%); height: 1px; position: relative;
-  background: var(--hairline);
+.msg.user::before { content: "USER"; }
+.msg.assistant::before { content: "JARVIS"; color: var(--accent-dim); }
+/* the user's command carries weight */
+.msg.user { color: var(--text); font-weight: 400; }
+.msg.user::after {
+  content: "›"; position: absolute; left: 3.4rem; top: 1.32rem;
+  font-family: var(--font-mono); font-size: 1rem;
+  color: var(--text-4);
 }
-.nexus-signal::after {
-  content: ""; position: absolute; top: -2px; left: 0; width: 5px; height: 5px;
-  border-radius: 50%; background: var(--faint);
-  transition: left var(--d-slow) var(--ease-spatial), background var(--d-med), box-shadow var(--d-med);
+/* the system's voice is marked by a quiet accent edge */
+.msg.assistant { border-left: 1px solid var(--accent-faint); padding-left: 5.2rem; }
+.msg.assistant::before { left: 1.4rem; }
+.msg .meta {
+  display: inline-block;
+  margin-left: 1.2rem;
+  font-family: var(--font-mono); font-size: 0.66rem;
+  letter-spacing: 0.2em; color: var(--text-4);
+  font-variant-numeric: tabular-nums;
 }
-.nexus-signal.up::after { left: calc(100% - 5px); background: var(--ok); box-shadow: 0 0 10px var(--aura-ok); }
-.nexus-signal.down::after { left: calc(100% - 5px); background: var(--err); box-shadow: 0 0 10px var(--aura-err); }
-/* querying: the instrument is mid-measurement (real pending state).
-   The dot scans — the machine is working, not decorating. */
-.nexus-signal.querying::after {
-  background: var(--accent); box-shadow: 0 0 10px var(--aura-accent);
-  animation: sigScan 1.15s var(--ease-in-out) infinite;
+/* system notices: centered whispers, not messages */
+.msg.system {
+  padding-left: 0; text-align: center;
+  font-family: var(--font-mono); font-size: 0.72rem;
+  letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--text-4);
+  border-top: 0;
 }
-@keyframes sigScan {
-  0% { left: 0; } 50% { left: calc(100% - 5px); } 100% { left: 0; }
-}
-/* RX tick: every assistant message arrives with a transient signal at
-   its leading edge — the event of the system answering, made visible.
-   TX was the transmitPulse on send; this is its pair. */
-.msg.assistant .sig-tick {
-  display: inline-block; margin-right: 0.7rem; vertical-align: baseline;
+.msg.system::before { display: none; }
+/* processing: the machine states its phase honestly */
+.msg .thinking {
+  display: flex; align-items: center; gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase;
   color: var(--accent);
 }
-/* legacy ring hooks: the JS toggles .up/.down on #nexus-ring — keep the
-   IDs working, render nothing circular */
-.nexus-ring { display: none; }
-.nexus-sub {
-  font-family: var(--font-mono); font-size: 0.66rem; font-weight: 400;
-  letter-spacing: 0.28em; text-transform: uppercase; color: var(--whisper);
-  margin: 2.5rem 0 0;
-}
-#nexus-last {
-  background: none; border: none; border-radius: 0;
-  border-top: 1px solid var(--hairline);
-  padding: 1.2rem 0; white-space: pre-wrap; word-break: break-word;
-  font-size: 0.92rem; font-weight: 300; line-height: 1.7; color: var(--muted);
-  max-height: 320px; overflow-y: auto;
-  width: min(860px, 100%);
-}
-
-/* thinking: the instrument's "processing" readout — real state only */
-.thinking {
-  display: inline-flex; align-items: center; gap: 0.6rem;
-  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--accent);
-  padding: 0.35rem 0;
-}
-.spinner {
-  width: 14px; height: 14px; border-radius: 50%; flex: none;
-  border: 2px solid rgba(63, 224, 195, 0.2); border-top-color: var(--accent);
+.msg .thinking .spinner {
+  width: 26px; height: 26px; flex: none;
+  border: 1px solid var(--hairline);
+  border-top-color: var(--accent);
+  border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
+/* transient signal tick on arrival (RX) — JS-driven, CSS-drawn */
+.sig-tick {
+  position: absolute; left: 0; top: 1.1rem;
+  width: 3px; height: 1.6rem;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(70, 230, 196, 0.8);
+  animation: tick-flash 900ms var(--ease-out) forwards;
+  pointer-events: none;
+}
+@keyframes tick-flash {
+  0% { opacity: 0; transform: scaleY(0.3); }
+  25% { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(1); }
+}
+.tx-pulse {
+  position: absolute; z-index: 5;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 16px rgba(70, 230, 196, 0.9);
+  pointer-events: none;
+}
 /* ============================================================
-   Motion layer — every animation is tied to a real UI event or
-   real backend state. Decorative motion stays in the ambient layer.
-   Budget: orb + composer + page entry + hover/focus feedback.
+   INTERNAL VIEWS — instruments, not pages.
+   Every view is a different tool of the same machine.
+   Full-bleed, generous space, display titles, hairlines.
+   No cards. No boxes. Data with air around it.
    ============================================================ */
+.view { padding: 6.2rem 4rem 6rem 9.5rem; }
 
-/* View transitions: the spatial state shift (viewIn) is the single
-   signature transition — defined once at the top of this file.
-   (dashboard-era viewEnter retired) */
+/* ---- instrument header: index · name · purpose · actions ---- */
+.view-head {
+  display: flex; align-items: baseline; gap: 1.4rem;
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 1.6rem;
+  margin-bottom: 3rem;
+  max-width: 1200px;
+}
+.view-index {
+  font-family: var(--font-mono);
+  font-size: 0.72rem; letter-spacing: 0.3em;
+  color: var(--accent-dim);
+}
+.view-head h2 {
+  margin: 0;
+  font-size: var(--d2);
+  font-weight: var(--display-w);
+  letter-spacing: var(--display-track);
+  line-height: 1;
+  color: var(--text);
+}
+.vh-sub {
+  font-family: var(--font-mono);
+  font-size: var(--micro-size);
+  letter-spacing: var(--micro-track);
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+.spacer { flex: 1; }
+.toolbar { display: flex; gap: 0.8rem; }
 
-/* Activity timeline spine: defined once with the per-view compositions above.
-   (dashboard-era duplicate rules retired) */
+/* ---- keys, not buttons ---- */
+.btn-ghost, .btn {
+  font-family: var(--font-mono);
+  font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase;
+  padding: 0.72rem 1.3rem;
+  cursor: pointer;
+  transition: all var(--d-instant) var(--ease-out);
+}
+.btn-ghost {
+  background: none; border: 1px solid var(--hairline);
+  color: var(--text-3);
+}
+.btn-ghost:hover { border-color: var(--accent-dim); color: var(--accent); }
+.btn {
+  background: var(--accent); border: 1px solid var(--accent);
+  color: #04110d; font-weight: 600;
+}
+.btn:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+.btn:active, .btn-ghost:active { transform: scale(0.96); }
 
-/* Tasks: non-terminal states pulse — the pulse reflects the real
-   task state, never an invented progress percentage. */
-.badge.live { animation: pulse-dot 1.6s ease-in-out infinite; }
+.note {
+  font-size: 0.82rem; color: var(--text-3);
+  max-width: 72ch; margin: 0 0 2rem;
+  font-weight: 300;
+}
 
-/* NEXUS: provenance line under the last response (real metadata) */
+/* ---- lists: the instrument's readout surface ---- */
+.list {
+  display: flex; flex-direction: column;
+  max-width: 1200px;
+}
+.empty {
+  padding: 4rem 0;
+  text-align: left;
+  display: flex; align-items: baseline; gap: 1.2rem;
+}
+.e-glyph { font-size: 1.2rem; color: var(--text-4); }
+.e-title {
+  font-family: var(--font-mono); font-size: 0.72rem;
+  letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--text-3);
+}
+/* skeleton: honest loading shimmer on the readout */
+.skel {
+  height: 3.4rem;
+  border-top: 1px solid var(--hairline-soft);
+  background: linear-gradient(to right, transparent, rgba(237, 242, 249, 0.035), transparent);
+  background-size: 200% 100%;
+  animation: skel-sweep 1.3s linear infinite;
+}
+@keyframes skel-sweep {
+  from { background-position: 200% 0; } to { background-position: -200% 0; }
+}
+
+/* ---- signal glyphs: precise geometric marks. The JS builds them as
+        SVG (.sig-glyph); without intrinsic sizing they must be tamed. ---- */
+.sig-glyph { width: 15px; height: 15px; flex: none; }
+.sig-glyph.ok { color: var(--ok); }
+.sig-glyph.err { color: var(--err); }
+.sig-glyph.warn { color: var(--warn); }
+.sig-glyph.accent { color: var(--accent); }
+.sig-glyph.info { color: var(--info); }
+.sig-glyph.live { animation: glyph-breathe 1.8s ease-in-out infinite; }
+@keyframes glyph-breathe { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+/* ---- badges: small verdicts, never decoration ---- */
+.badge {
+  font-family: var(--font-mono);
+  font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase;
+  padding: 0.32rem 0.7rem;
+  border: 1px solid var(--hairline);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.badge.ok { border-color: rgba(63, 185, 80, 0.4); color: var(--ok); }
+.badge.live { animation: badge-live 1.8s ease-in-out infinite; }
+@keyframes badge-live { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
+.badge.warn { border-color: rgba(210, 153, 34, 0.4); color: var(--warn); }
+.badge.err { border-color: rgba(248, 81, 73, 0.4); color: var(--err); }
+
+/* ---- generic row → index entry ---- */
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem; align-items: baseline;
+  padding: 1.5rem 0.4rem;
+  border-top: 1px solid var(--hairline-soft);
+  transition: background var(--d-instant) var(--ease-out), padding var(--d-instant) var(--ease-out);
+}
+.row.clickable { cursor: pointer; }
+.row.clickable:hover { background: rgba(237, 242, 249, 0.018); }
+.row.clickable:hover .r-title { color: var(--accent); }
+.r-main { min-width: 0; }
+.r-title {
+  font-size: 1.02rem; font-weight: 400; letter-spacing: 0.01em;
+  color: var(--text);
+  font-family: var(--font-mono);
+  transition: color var(--d-instant) var(--ease-out);
+}
+.r-meta {
+  margin-top: 0.45rem;
+  font-family: var(--font-mono); font-size: 0.7rem;
+  letter-spacing: 0.14em; color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.r-side {
+  display: flex; align-items: center; gap: 1rem;
+  font-family: var(--font-mono); font-size: 0.72rem;
+  color: var(--text-3); letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.dir-marker { color: var(--text-4); transition: color var(--d-instant), transform var(--d-instant) var(--ease-out); }
+.row.clickable:hover .dir-marker { color: var(--accent); transform: translateX(4px); }
+/* state changes ripple through the readout */
+.row.state-changed { animation: row-flash 1.1s var(--ease-out); }
+@keyframes row-flash {
+  0% { background: rgba(70, 230, 196, 0.07); }
+  100% { background: transparent; }
+}
+.row.born { animation: row-born var(--d-page) var(--ease-spatial); }
+@keyframes row-born {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ============ SESSIONS — SESSION INDEX ============
+   Sessions as entities in an index, not table rows. */
+#view-sessions .list { counter-reset: session; }
+#view-sessions .row { grid-template-columns: auto 1fr auto; }
+#view-sessions .row::before {
+  counter-increment: session;
+  content: counter(session, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: 1.9rem; font-weight: 200;
+  color: var(--text-4);
+  letter-spacing: -0.02em;
+  min-width: 3.2rem;
+  transition: color var(--d-instant) var(--ease-out);
+}
+#view-sessions .row.clickable:hover::before { color: var(--accent-dim); }
+#view-sessions .r-title { font-size: 1.05rem; }
+
+/* ============ TASKS — PROCESS MONITOR ============
+   Lifecycle has identity: each task is a process lane with
+   its stage lit. Queued → Active → Terminal. The JS builds
+   exactly 3 segments; the row is main | instrument. */
+#view-tasks .row {
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "main side" "id side";
+  gap: 0.7rem 2rem;
+  padding: 1.7rem 0.4rem;
+  align-items: center;
+}
+#view-tasks .r-main { grid-area: main; }
+#view-tasks .r-side { grid-area: side; }
+#view-tasks .row > .r-meta.mono { grid-area: id; margin-top: 0; }
+/* the lifecycle pipeline: three stages, one lit */
+.lifecycle {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  width: 230px;
+}
+.lifecycle i { display: block; }
+/* JS builds .lifecycle > segments; style them as process stages */
+.lifecycle > * {
+  position: relative;
+  height: 30px;
+  background: rgba(237, 242, 249, 0.03);
+  border-top: 1px solid var(--hairline-soft);
+}
+.lifecycle > *::after {
+  position: absolute; left: 0; top: 7px;
+  font-family: var(--font-mono); font-size: 0.55rem;
+  letter-spacing: 0.26em; color: var(--text-4);
+}
+.lifecycle > *:nth-child(1)::after { content: "QUEUED"; }
+.lifecycle > *:nth-child(2)::after { content: "ACTIVE"; }
+.lifecycle > *:nth-child(3)::after { content: "TERMINAL"; }
+.lifecycle .on {
+  background: rgba(70, 230, 196, 0.08);
+  border-top-color: var(--accent-dim);
+}
+.lifecycle .on::after { color: var(--accent); }
+.lifecycle .on-glow {
+  animation: stage-pulse 1.6s ease-in-out infinite;
+}
+@keyframes stage-pulse {
+  0%, 100% { background: rgba(70, 230, 196, 0.06); }
+  50% { background: rgba(70, 230, 196, 0.16); }
+}
+.lifecycle .on[data-state="failed"], .lifecycle .on[data-state="failure"] {
+  background: rgba(248, 81, 73, 0.08);
+  border-top-color: rgba(248, 81, 73, 0.5);
+}
+.lifecycle .on[data-state="failed"]::after, .lifecycle .on[data-state="failure"]::after { color: var(--err); }
+
+/* ============ ACTIVITY — SYSTEM TELEMETRY ============
+   A living timeline: a time spine with event nodes,
+   not a list. */
+#view-activity .list { position: relative; padding-left: 2.6rem; }
+#view-activity .list::before {
+  content: ""; position: absolute;
+  left: 0.55rem; top: 0.6rem; bottom: 0.6rem; width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--hairline) 8%, var(--hairline) 92%, transparent);
+}
+#view-activity .row {
+  /* in-flow children: .ev-time + .ev-type + .badge — one reading line;
+     the .ev-dot sits absolute on the spine */
+  grid-template-columns: auto 1fr auto;
+  column-gap: 1.4rem;
+  align-items: center;
+  border-top: 0;
+  padding: 1.05rem 0;
+}
+#view-activity .row > .badge { justify-self: end; }
+.ev-dot {
+  position: absolute; left: -2.6rem;
+  width: 7px; height: 7px;
+  border: 1px solid var(--text-4);
+  transform: rotate(45deg) translateY(0.55rem);
+  background: var(--bg);
+}
+#view-activity .row { position: relative; }
+.ev-time {
+  font-family: var(--font-mono); font-size: 0.68rem;
+  letter-spacing: 0.2em; color: var(--text-4);
+  font-variant-numeric: tabular-nums;
+}
+.ev-type {
+  font-family: var(--font-mono); font-size: 0.92rem;
+  letter-spacing: 0.06em; color: var(--text);
+}
+#view-activity .r-meta { margin-top: 0.2rem; }
+
+/* ============ AUDIT — EXECUTION TRACE ============
+   The causal chain, drawn as a trace. Events group by
+   their real task_id into TRACE blocks; each event is a
+   node on the spine labeled by its pipeline stage.
+   Nothing is inferred — grouping uses backend fields. */
+.trace { margin-bottom: 3.2rem; max-width: 1200px; }
+.trace-head {
+  display: flex; align-items: baseline; gap: 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 0.4rem;
+}
+.trace-name {
+  font-family: var(--font-mono); font-size: 0.78rem;
+  letter-spacing: 0.3em; color: var(--text);
+}
+.trace-name .t-accent { color: var(--accent); }
+.trace-meta {
+  font-family: var(--font-mono); font-size: 0.66rem;
+  letter-spacing: 0.18em; color: var(--text-4);
+  font-variant-numeric: tabular-nums;
+}
+.trace-spine { position: relative; padding-left: 2.4rem; }
+.trace-spine::before {
+  content: ""; position: absolute;
+  left: 0.5rem; top: 1.4rem; bottom: 1.4rem; width: 1px;
+  background: var(--hairline);
+}
+.tnode {
+  position: relative;
+  padding: 1.15rem 0 1.15rem 0.4rem;
+  border-bottom: 1px solid var(--hairline-soft);
+  display: grid; grid-template-columns: auto 1fr auto;
+  gap: 1.4rem; align-items: start;
+}
+.tnode::before {
+  content: ""; position: absolute;
+  left: -2.4rem; top: 1.65rem;
+  width: 7px; height: 7px;
+  margin-left: 0.5rem;
+  transform: translateX(-50%) rotate(45deg);
+  border: 1px solid var(--text-3);
+  background: var(--bg);
+}
+.tnode[data-outcome="success"]::before { border-color: var(--ok); }
+.tnode[data-outcome="failure"]::before, .tnode[data-outcome="denied"]::before { border-color: var(--err); }
+.tnode[data-outcome="cancelled"]::before { border-color: var(--warn); }
+.tnode-stage {
+  font-family: var(--font-mono); font-size: 0.68rem;
+  letter-spacing: 0.28em; color: var(--accent-dim);
+  padding-top: 0.15rem;
+  min-width: 9.5rem;
+}
+.tnode-detail {
+  font-family: var(--font-mono); font-size: 0.74rem;
+  line-height: 1.75; color: var(--text-2);
+  white-space: pre-wrap; word-break: break-word;
+}
+.tnode-detail .t-dim { color: var(--text-4); }
+
+/* ============ MEMORY — MEMORY CORE ============
+   A knowledge catalog: kinds as clusters with density,
+   entries as catalog records. Grouped by the real kind
+   field — no invented relations. */
+.mem-kind {
+  display: flex; align-items: baseline; gap: 1.2rem;
+  margin: 2.6rem 0 0.4rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.mem-kind:first-child { margin-top: 0; }
+.mem-kind-name {
+  font-family: var(--font-mono); font-size: 0.78rem;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--text);
+}
+.mem-kind-count {
+  font-family: var(--font-mono); font-size: 2rem; font-weight: 200;
+  color: var(--text-4); letter-spacing: -0.02em;
+}
+.mem-kind-note {
+  font-family: var(--font-mono); font-size: var(--micro-size);
+  letter-spacing: var(--micro-track); color: var(--text-4);
+  text-transform: uppercase;
+}
+#view-memory .row { grid-template-columns: 1fr auto; }
+#view-memory .r-title { font-family: var(--font-ui); font-size: 0.98rem; font-weight: 300; }
+
+/* ============ NEXUS — ELECTRICAL INTELLIGENCE INSTRUMENT ==
+   One primary reading, set huge. State, signal, last
+   response, provenance — an instrument, not a dashboard. */
+.nexus-hero {
+  position: relative;
+  max-width: 1200px;
+  padding: 2rem 0 3rem;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 3rem;
+}
+.nexus-kicker {
+  font-family: var(--font-mono); font-size: var(--micro-size);
+  letter-spacing: var(--micro-track); text-transform: uppercase;
+  color: var(--text-4); margin-bottom: 1.6rem;
+}
+.nexus-state {
+  margin: 0;
+  font-size: clamp(3rem, 7vw, 5.6rem);
+  font-weight: var(--display-w);
+  letter-spacing: var(--display-track);
+  line-height: 1;
+  color: var(--text-3);
+  transition: color var(--d-med) var(--ease-out);
+}
+.nexus-state.is-up { color: var(--text); text-shadow: 0 0 80px rgba(63, 185, 80, 0.18); }
+.nexus-state.is-down { color: var(--err); }
+#nexus-status-text { text-transform: lowercase; }
+/* signal line: the instrument's live wire */
+.nexus-signal {
+  margin-top: 2.2rem;
+  height: 1px;
+  background: var(--hairline);
+  position: relative;
+  overflow: visible;
+}
+.nexus-signal::after {
+  content: ""; position: absolute; left: 0; top: 0;
+  height: 1px; width: 34%;
+  background: var(--text-4);
+  transition: background var(--d-med), width var(--d-slow) var(--ease-out);
+}
+.nexus-signal.up::after { background: var(--ok); box-shadow: 0 0 12px rgba(63, 185, 80, 0.7); width: 100%; }
+.nexus-signal.down::after { background: var(--err); box-shadow: 0 0 12px rgba(248, 81, 73, 0.7); width: 100%; }
+.nexus-signal.querying::after {
+  background: var(--accent);
+  animation: signal-scan 1.2s var(--ease-in-out) infinite;
+}
+@keyframes signal-scan {
+  0% { left: 0; width: 12%; opacity: 0.4; }
+  50% { left: 44%; width: 34%; opacity: 1; }
+  100% { left: 88%; width: 12%; opacity: 0.4; }
+}
+.nexus-ring { display: none; }
+.nexus-sub {
+  font-family: var(--font-mono); font-size: var(--micro-size);
+  letter-spacing: var(--micro-track); text-transform: uppercase;
+  color: var(--text-4); font-weight: 500;
+  margin: 0 0 1.4rem;
+}
+#nexus-last {
+  font-family: var(--font-mono); font-size: 0.8rem;
+  line-height: 1.8; color: var(--text-2);
+  white-space: pre-wrap; word-break: break-word;
+  max-width: 1200px;
+  padding-left: 1.4rem;
+  border-left: 1px solid var(--hairline);
+}
 #nexus-prov {
-  font-family: var(--font-mono); font-size: 0.7rem; color: var(--faint);
-  padding: 0 0.2rem;
+  margin-top: 1.6rem;
+  font-family: var(--font-mono); font-size: 0.66rem;
+  letter-spacing: 0.18em; color: var(--text-4);
+  max-width: 1200px;
+}
+
+/* ============ SYSTEM — CORE DIAGNOSTICS ============
+   A diagnostic readout: sections as labeled blocks,
+   values as mono data. One column, no cards. */
+.ledger {
+  max-width: 1200px;
+  margin-bottom: 3.4rem;
+}
+.ledger-title {
+  display: flex; align-items: baseline; gap: 1.2rem;
+  margin: 0 0 0.4rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 1.05rem; font-weight: 400; letter-spacing: 0.02em;
+  color: var(--text);
+}
+.ledger-index {
+  font-family: var(--font-mono); font-size: 0.68rem;
+  letter-spacing: 0.3em; color: var(--accent-dim);
+}
+.kv {
+  display: grid; grid-template-columns: 240px 1fr;
+  gap: 1.5rem; align-items: baseline;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.kv .k {
+  font-family: var(--font-mono); font-size: 0.68rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-4);
+}
+.kv .v {
+  font-family: var(--font-mono); font-size: 0.86rem;
+  letter-spacing: 0.04em; color: var(--text-2);
+  word-break: break-all;
+}
+.kv .v:empty::before { content: "—"; color: var(--text-4); }
+#motion-toggle {
+  width: 1rem; height: 1rem;
+  accent-color: var(--accent);
+}
+/* ============================================================
+   BOOT — the machine waking up. Short, skippable, honest:
+   every check reflects a real backend probe.
+   ============================================================ */
+#boot {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--bg-deep);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1.4rem;
+  cursor: pointer;
+  transition: opacity var(--d-page) var(--ease-out), visibility var(--d-page);
+}
+#boot.done { opacity: 0; visibility: hidden; pointer-events: none; }
+#boot .wordmark {
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  font-weight: var(--display-w);
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
+  color: var(--text);
+}
+#boot .boot-sub {
+  font-family: var(--font-mono); font-size: var(--micro-size);
+  letter-spacing: var(--micro-track); color: var(--text-4);
+}
+#boot-list {
+  list-style: none; margin: 1rem 0 0; padding: 0;
+  display: flex; gap: 2.4rem;
+  font-family: var(--font-mono); font-size: 0.7rem;
+  letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--text-3);
+}
+#boot-list li { display: flex; align-items: center; gap: 0.7rem; }
+.bdot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-4);
+  transition: background var(--d-med);
+}
+#boot-list li.ok .bdot { background: var(--ok); box-shadow: 0 0 8px rgba(63, 185, 80, 0.8); }
+#boot-list li.fail .bdot { background: var(--err); box-shadow: 0 0 8px rgba(248, 81, 73, 0.8); }
+.boot-hint {
+  font-family: var(--font-mono); font-size: 0.6rem;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--text-4); opacity: 0.6;
+  margin-top: 1rem;
 }
 
 /* ============================================================
-   Responsive (desktop-first; smaller screens stay usable)
-   The shell is now rail + environment; it collapses in stages.
-   Telemetry floats only on wide screens; the rail becomes a
-   horizontal strip only on narrow screens.
+   TECHNOLOGY LAYER — re-applied on the new composition.
+   Order honored: art direction → composition → type →
+   space → materiality → interaction → motion → ambience.
+   Every motion below is caused by a real event, a real
+   data diff, or a real state. Nothing decorative.
+   ============================================================ */
+/* spatial view transitions: the interface has geography */
+.view-enter { animation: view-in var(--d-page) var(--ease-spatial); }
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+/* staggered arrivals: rows settle with inertia */
+.row.born, .tnode.born { animation: row-born var(--d-page) var(--ease-spatial); }
+/* morphing values: only after a real diff (JS morphText) */
+.swap { animation: value-swap var(--d-med) var(--ease-out); }
+@keyframes value-swap {
+  0% { opacity: 0.25; } 100% { opacity: 1; }
+}
+/* inertial parallax on the home field (JS-gated: fine pointers,
+   no reduced motion). Subtle — the field breathes with you. */
+@media (pointer: fine) {
+  #view-home .parallax { transition: transform 0.6s var(--ease-out); }
+}
+
+/* ============================================================
+   RESPONSIVE — the composition reorganizes per viewport.
+   Not a shrunken desktop: zones re-flow, edges collapse,
+   the machine keeps its posture at every size.
+   1920 / 1600 / 1440 / 1280 / 1024 / 900 / 760 / 390
    ============================================================ */
 @media (max-width: 1500px) {
-  .view { padding: 0.6rem 2rem 2rem; }
-  #syspanel { right: 1.2rem; }
+  .view { padding: 6rem 3rem 6rem 8.6rem; }
+  #statusline { gap: 1.8rem; }
 }
 @media (max-width: 1240px) {
-  #syspanel { display: none !important; } /* telemetry yields to content */
-  .view { padding: 0.6rem 1.4rem 2rem; }
+  /* telemetry yields: the statusline dissolves, truth lives
+     in the System view from here down */
+  #statusline { display: none; }
+  .view { padding: 5.6rem 2.4rem 5rem 7.6rem; }
+  #nav { left: 1.6rem; }
+  .nav-item { font-size: 0; gap: 0; }
+  .nav-item .glyph { font-size: 0.95rem; width: 2rem; }
+  .nav-label, .nav-foot { display: none; }
+  #view-home.has-thread #orb-dock { left: 6.4rem; }
+  #view-home.has-thread .identity { left: calc(6.4rem + 150px); }
+}
+@media (max-width: 1024px) {
+  .identity { left: 56%; }
+  .id-sub { font-size: 0.95rem; }
+  #orb-dock { left: 31%; }
+  .field-marks { left: 31%; }
+  .view { padding: 5.4rem 2rem 5rem 6.4rem; }
+  #nav { left: 1.2rem; }
 }
 @media (max-width: 900px) {
-  #app { grid-template-columns: 60px minmax(0, 1fr); }
-  #topbar { left: 60px; padding: 1rem 1.2rem 0; }
-  #nav { padding-top: 4.6rem; }
-  .nav-item { width: 40px; height: 40px; }
-  .brand .sub, #clock { display: none; }
-  #orb-wrap { --orb-size: clamp(200px, 52vmin, 320px); }
-  #view-home.has-thread #orb-wrap { --orb-size: clamp(110px, 24vmin, 150px); }
-}
-@media (max-width: 760px) {
-  #app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-  #topbar { left: 0; padding: 0.9rem 1rem 0; }
+  /* the command index becomes a top strip: the machine's
+     function keys re-dock above the field */
   #nav {
-    flex-direction: row; overflow-x: auto; overflow-y: hidden;
-    padding: 0.6rem 0.8rem; align-items: center; justify-content: flex-start;
-    margin-top: 52px; /* clear the fixed topbar */
+    left: 0; right: 0; top: 0; transform: none;
+    flex-direction: row; align-items: center;
+    gap: 0.2rem;
+    padding: 4.4rem 1.2rem 0.7rem;
+    overflow-x: auto; overflow-y: hidden;
+    background: linear-gradient(to bottom, var(--bg) 72%, transparent);
   }
   #nav::before { display: none; }
-  #nav-indicator { display: none; }
-  .nav-item { width: auto; height: 40px; flex: none; font-size: 0.82rem; padding: 0 0.9rem; white-space: nowrap; letter-spacing: 0.06em; }
-  .nav-item .glyph { font-size: 0.95rem; margin-right: 0.5rem; }
-  .nav-item:hover::after { display: none; }
-  #nav .nav-foot { display: none; }
-  .view { padding: 0.4rem 1rem 1.6rem; }
-  .view-head { padding-top: 2.4rem; }
-  .view-head h2 { font-size: 1.6rem; }
-  .msg { max-width: 94%; }
-  #home-status { gap: 0.7rem; font-size: 0.64rem; }
+  .nav-item {
+    font-size: 0.66rem; padding: 0.6rem 0.8rem;
+    white-space: nowrap; flex: none;
+  }
+  .nav-item .glyph { width: auto; margin-right: 0.45rem; }
+  .nav-item[aria-current="true"]::before {
+    left: 50%; top: auto; bottom: 0.15rem;
+    transform: translateX(-50%) rotate(45deg);
+    width: 4px; height: 4px;
+  }
+  #topbar { padding: 1.2rem 1.4rem 0; }
+  .brand .sub { display: none; }
+  .view { padding: 8.6rem 1.6rem 4rem; }
+  /* home field: orb and identity stack in a vertical rhythm */
+  #view-home { overflow-y: auto; }
+  .field-marks { display: none; }
+  #orb-dock, .identity {
+    position: relative; left: auto; top: auto; transform: none;
+  }
+  #orb-dock { margin: 0 auto; width: max-content; }
+  #orb-wrap { --orb-size: clamp(220px, 52vmin, 320px); }
+  .identity { max-width: none; text-align: center; margin-top: 1.6rem; padding: 0 1rem; }
+  .id-kicker { justify-content: center; }
+  .id-display { font-size: clamp(2.8rem, 13vw, 4.4rem); }
+  .id-sub { margin-left: auto; margin-right: auto; }
+  #composer-zone { position: relative; left: auto; transform: none; bottom: auto; width: auto; margin: 3rem 1.6rem 4rem; }
+  /* operations: the log flows in the column.
+     NOTE: desktop has-thread rules set fixed left/top with higher
+     specificity — they must be explicitly neutralized here. */
+  #view-home.has-thread { display: flex; flex-direction: column; }
+  #view-home.has-thread #orb-dock { left: auto; top: auto; margin: 0; width: auto; }
+  #view-home.has-thread #orb-wrap { --orb-size: 84px; }
+  #view-home.has-thread #orb-label { display: none; }
+  #view-home.has-thread .identity { left: auto; top: auto; text-align: left; margin-top: 0; padding: 0; }
+  #view-home.has-thread .id-kicker { justify-content: flex-start; margin-bottom: 0; }
+  #view-home.has-thread #conversation {
+    position: relative; left: auto; transform: none;
+    top: auto; bottom: auto; width: auto; flex: 1;
+    margin: 0 1.6rem; padding-right: 0;
+    overflow-y: visible;
+    mask-image: none; -webkit-mask-image: none;
+  }
+  #view-home.has-thread #composer-zone { margin: 2rem 1.6rem 3rem; }
   #composer-hints { display: none; }
+  .kv { grid-template-columns: 150px 1fr; }
+  .tnode { grid-template-columns: 1fr; gap: 0.5rem; }
+  .tnode-stage { min-width: 0; }
+}
+@media (max-width: 760px) {
+  #orb-label { display: none; }
+  #topbar { padding: 1rem 1.1rem 0; }
+  #wordmark { font-size: 0.72rem; letter-spacing: 0.34em; }
+  #clock { display: none; }
+  .view { padding: 8.2rem 1.2rem 4rem; }
+  .view-head { flex-wrap: wrap; gap: 0.9rem; margin-bottom: 2.2rem; }
+  .view-head h2 { font-size: 1.7rem; }
+  .msg { padding-left: 0; padding-top: 2.6rem; }
+  .msg::before { top: 1.1rem; }
+  .msg.user::after { display: none; }
+  .msg.assistant { border-left: 0; border-top: 1px solid var(--accent-faint); }
+  .msg.assistant::before { left: 0; }
+  .msg .meta { margin-left: 0.8rem; }
+  #view-sessions .row { grid-template-columns: 1fr auto; }
+  #view-sessions .row::before { display: none; }
+  .nexus-state { font-size: clamp(2.4rem, 11vw, 3.4rem); }
+  .lifecycle > *::after { font-size: 0.48rem; letter-spacing: 0.18em; }
+  #send { width: 3rem; height: 3rem; }
+}
+/* 390×844 — the handheld instrument */
+@media (max-width: 430px) {
+  .backend-status #backend-status { display: none; }
+  .top-sep { display: none; }
+  #orb-wrap { --orb-size: clamp(200px, 58vmin, 280px); }
+  .id-kicker { font-size: 0.56rem; }
+  .toolbar { width: 100%; }
+  .btn-ghost, .btn { flex: 1; text-align: center; }
+  .kv { grid-template-columns: 1fr; gap: 0.2rem; }
 }
 
 /* ============================================================
-   Reduced motion — OS setting or manual toggle
+   REDUCED MOTION — the design must hold with zero animation.
+   Criterion: with everything off, it is still JARVIS.
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
   #aurora, #ambient, #dotgrid, #grain { display: none; }
-  #boot .wordmark { animation: none; color: var(--text); background: none; -webkit-background-clip: unset; background-clip: unset; }
-  #composer.beam::before { display: none; }
+  body::after { display: none; }
+  .field-marks .ring.r1::before { display: none; }
 }
-#app[data-motion="reduced"] #aurora, #app[data-motion="reduced"] #ambient,
-#app[data-motion="reduced"] #dotgrid, #app[data-motion="reduced"] #grain { display: none; }
-#app[data-motion="reduced"] *, #app[data-motion="reduced"] *::before, #app[data-motion="reduced"] *::after {
-  animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;
+#app[data-motion="reduced"] #aurora,
+#app[data-motion="reduced"] #ambient,
+#app[data-motion="reduced"] #dotgrid,
+#app[data-motion="reduced"] #grain,
+#app[data-motion="reduced"] body::after { display: none; }
+#app[data-motion="reduced"] *,
+#app[data-motion="reduced"] *::before,
+#app[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
-#app[data-motion="reduced"] #boot .wordmark { animation: none; color: var(--text); background: none; -webkit-background-clip: unset; background-clip: unset; }
-#app[data-motion="reduced"] #composer.beam::before { display: none; }
+#app[data-motion="reduced"] .field-marks .ring.r1::before { display: none; }
 </style>
 </head>
 <body>
@@ -1335,7 +1448,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <div class="brand">
       <span class="brand-mark" id="brand-mark" aria-hidden="true"></span>
       <span id="wordmark">JARVIS</span>
-      <span class="sub">Local Intelligence</span>
+      <span class="sub">LOCAL INTELLIGENCE</span>
     </div>
     <div class="top-right">
       <span id="clock" class="mono" title="hora local"></span>
@@ -1347,45 +1460,58 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   </header>
 
   <nav id="nav" aria-label="Navegação principal">
-    <div id="nav-indicator" aria-hidden="true"></div>
-    <div class="nav-label">SISTEMA</div>
+    <div class="nav-label">Sistema</div>
     <button class="nav-item" id="nav-home" data-view="home" aria-current="true" title="Home"><span class="glyph" aria-hidden="true">◉</span>Home</button>
     <button class="nav-item" id="nav-sessions" data-view="sessions" aria-current="false" title="Sessões"><span class="glyph" aria-hidden="true">▤</span>Sessões</button>
     <button class="nav-item" id="nav-tasks" data-view="tasks" aria-current="false" title="Tarefas"><span class="glyph" aria-hidden="true">◔</span>Tarefas</button>
     <button class="nav-item" id="nav-memory" data-view="memory" aria-current="false" title="Memória"><span class="glyph" aria-hidden="true">❖</span>Memória</button>
-    <div class="nav-label">OBSERVABILIDADE</div>
+    <div class="nav-label">Observabilidade</div>
     <button class="nav-item" id="nav-activity" data-view="activity" aria-current="false" title="Atividade"><span class="glyph" aria-hidden="true">≋</span>Atividade</button>
     <button class="nav-item" id="nav-audit" data-view="audit" aria-current="false" title="Auditoria"><span class="glyph" aria-hidden="true">⎙</span>Auditoria</button>
-    <div class="nav-label">INTEGRAÇÕES</div>
+    <div class="nav-label">Integrações</div>
     <button class="nav-item" id="nav-nexus" data-view="nexus" aria-current="false" title="NEXUS"><span class="glyph" aria-hidden="true">⬢</span>NEXUS</button>
     <button class="nav-item" id="nav-system" data-view="system" aria-current="false" title="Sistema"><span class="glyph" aria-hidden="true">⚙</span>Sistema</button>
     <div class="nav-foot mono" id="nav-foot">v0.1.0</div>
   </nav>
 
   <main id="main">
-    <!-- HOME: command experience — plasma orb at the center -->
+    <!-- HOME: two machine modes.
+         STANDBY — the instrument at rest: orb as gravitational center,
+         identity in display type, field breathing around the core.
+         OPERATIONS (has-thread) — the machine reconfigures: the orb
+         docks to a compact live core and the system log takes
+         the central field. -->
     <section class="view" id="view-home" aria-label="Home">
-      <!-- home-status retired: backend/session/turns/task live in the
-           floating telemetry field (#syspanel). No duplicate strip. -->
-      <div id="orb-block">
+      <div class="field-marks" aria-hidden="true">
+        <span class="cross"></span>
+        <span class="cross v"></span>
+        <span class="ring r3"></span>
+        <span class="ring r2"></span>
+        <span class="ring r1"></span>
+      </div>
+      <div id="orb-dock">
         <div id="orb-wrap" data-orb="idle">
           <canvas id="orb" width="560" height="560" aria-hidden="true"></canvas>
           <div id="orb-label">IDLE</div>
         </div>
-        <div id="greeting">
-          <h2 id="greeting-title">JARVIS</h2>
-          <div class="g-sub" id="greeting-sub">Sistemas operacionais.</div>
-          <div id="state-line" aria-live="polite"></div>
-        </div>
+      </div>
+      <div class="identity">
+        <div class="id-kicker"><span>Local Intelligence</span><span class="id-rule" aria-hidden="true"></span><span id="state-line" aria-live="polite"></span></div>
+        <h1 class="id-display">JARVIS</h1>
+        <p class="id-sub"><span id="greeting-title"></span> <span id="greeting-sub">Sistemas operacionais.</span></p>
       </div>
       <div id="conversation" aria-live="polite" aria-label="Conversa"></div>
       <div id="composer-zone">
+        <div class="cmd-top" aria-hidden="true">
+          <span class="cmd-label">Command</span>
+          <span class="cmd-channel">ch · local</span>
+        </div>
         <form id="composer" aria-label="Superfície de comando">
-          <span class="cmd-energy" aria-hidden="true"></span>
           <span class="cmd-prompt" aria-hidden="true">›</span>
-          <textarea id="input" rows="1" maxlength="2000" placeholder="Pergunte ao JARVIS…" aria-label="Mensagem"></textarea>
+          <textarea id="input" rows="1" maxlength="2000" placeholder="Ask JARVIS anything…" aria-label="Mensagem"></textarea>
           <button id="send" type="submit" aria-label="Enviar mensagem" title="Enviar (Enter)">↑</button>
         </form>
+        <div class="cmd-trace" aria-hidden="true"></div>
         <div id="composer-hints" aria-hidden="true">
           <span><kbd>Enter</kbd> enviar</span>
           <span><kbd>Shift</kbd>+<kbd>Enter</kbd> quebra de linha</span>
@@ -1394,10 +1520,10 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       </div>
     </section>
 
-    <!-- SESSIONS -->
+    <!-- SESSIONS — SESSION INDEX -->
     <section class="view" id="view-sessions" aria-label="Sessões" hidden>
       <div class="view-head">
-        <span class="view-index">02</span><h2>SESSÕES</h2><span class="vh-sub">conversas registradas</span>
+        <span class="view-index">01</span><h2>Session Index</h2><span class="vh-sub">conversas registradas</span>
         <span class="spacer"></span>
         <div class="toolbar">
           <button class="btn-ghost" id="new-session" type="button">Nova sessão</button>
@@ -1407,55 +1533,56 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       <div class="list" id="session-list"></div>
     </section>
 
-    <!-- TASKS -->
+    <!-- TASKS — PROCESS MONITOR -->
     <section class="view" id="view-tasks" aria-label="Tarefas" hidden>
       <div class="view-head">
-        <span class="view-index">03</span><h2>TAREFAS</h2><span class="vh-sub">execuções do orquestrador</span>
+        <span class="view-index">02</span><h2>Process Monitor</h2><span class="vh-sub">execuções do orquestrador</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn-ghost" id="refresh-tasks" type="button">Atualizar</button></div>
       </div>
       <div class="list" id="task-list"></div>
     </section>
 
-    <!-- MEMORY (F3.5: strictly read-only) -->
+    <!-- MEMORY — MEMORY CORE (F3.5: strictly read-only) -->
     <section class="view" id="view-memory" aria-label="Memória" hidden>
       <div class="view-head">
-        <span class="view-index">04</span><h2>MEMÓRIA</h2><span class="vh-sub">declarações suas — não verificadas, nunca fatos medidos</span>
+        <span class="view-index">03</span><h2>Memory Core</h2><span class="vh-sub">declarações suas — não verificadas, nunca fatos medidos</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn-ghost" id="refresh-memory" type="button">Atualizar</button></div>
       </div>
       <div class="list" id="memory-list"></div>
     </section>
 
-    <!-- ACTIVITY -->
+    <!-- ACTIVITY — SYSTEM TELEMETRY -->
     <section class="view" id="view-activity" aria-label="Atividade" hidden>
       <div class="view-head">
-        <span class="view-index">05</span><h2>ATIVIDADE</h2><span class="vh-sub">eventos recentes do sistema</span>
+        <span class="view-index">04</span><h2>System Telemetry</h2><span class="vh-sub">eventos recentes do sistema</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn-ghost" id="refresh-activity" type="button">Atualizar</button></div>
       </div>
       <div class="list" id="activity-list"></div>
     </section>
 
-    <!-- AUDIT -->
+    <!-- AUDIT — EXECUTION TRACE -->
     <section class="view" id="view-audit" aria-label="Auditoria" hidden>
       <div class="view-head">
-        <span class="view-index">06</span><h2>AUDITORIA</h2><span class="vh-sub">trilha técnica append-only</span>
+        <span class="view-index">05</span><h2>Execution Trace</h2><span class="vh-sub">trilha técnica append-only</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn-ghost" id="refresh-audit" type="button">Atualizar</button></div>
       </div>
-      <p class="note">Eventos registrados pelo backend, ordem de inserção (mais recentes primeiro). Nada é ocultado para caber no visual.</p>
-      <div class="list" id="audit-list"></div>
+      <p class="note">Eventos agrupados pela tarefa real que os gerou (<span class="mono">task_id</span> do backend). Cada nó é uma etapa do pipeline — a sequência causal, não uma lista.</p>
+      <div id="audit-list"></div>
     </section>
 
-    <!-- NEXUS (F3.6: honest status only) -->
+    <!-- NEXUS — ELECTRICAL INTELLIGENCE INSTRUMENT (F3.6: honest status only) -->
     <section class="view" id="view-nexus" aria-label="NEXUS" hidden>
       <div class="view-head">
-        <span class="view-index">07</span><h2>NEXUS</h2><span class="vh-sub">integração de monitoramento elétrico</span>
+        <span class="view-index">06</span><h2>Nexus Instrument</h2><span class="vh-sub">integração de monitoramento elétrico</span>
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn" id="nexus-query" type="button">Consultar agora</button></div>
       </div>
       <div class="nexus-hero">
+        <p class="nexus-kicker">Primary reading</p>
         <p class="nexus-state" id="nexus-state" aria-live="polite"><span id="nexus-status-text">não consultado</span></p>
         <div class="nexus-signal" id="nexus-signal" aria-hidden="true"></div>
         <p class="note" id="nexus-note">O status só muda após uma consulta real. A UI nunca inventa estado.</p>
@@ -1466,9 +1593,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       <div id="nexus-prov" aria-label="Proveniência da resposta"></div>
     </section>
 
-    <!-- SYSTEM -->
+    <!-- SYSTEM — CORE DIAGNOSTICS -->
     <section class="view" id="view-system" aria-label="Sistema" hidden>
-      <div class="view-head"><span class="view-index">08</span><h2>SISTEMA</h2><span class="vh-sub">estado operacional</span></div>
+      <div class="view-head"><span class="view-index">07</span><h2>Core Diagnostics</h2><span class="vh-sub">estado operacional</span></div>
       <div class="ledger" aria-label="Backend">
         <h3 class="ledger-title"><span class="ledger-index">01</span>Backend</h3>
         <div class="kv"><span class="k">status</span><span class="v" id="sys-backend">—</span></div>
@@ -1496,27 +1623,14 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     </section>
   </main>
 
-  <aside id="syspanel" aria-label="Painel do sistema">
-    <section class="sys-panel compact spot" aria-label="Núcleo">
-      <div class="sp-head"><span class="sp-index">01</span><span class="sp-title">Núcleo</span><span class="sp-pip" id="sys-core-pip" aria-hidden="true"></span></div>
-      <div class="status-line"><span id="sys-core-dot" class="dot" aria-hidden="true"></span><span id="sys-core-text">inicializando&hellip;</span></div>
-    </section>
-    <section class="sys-panel compact spot" aria-label="NEXUS">
-      <div class="sp-head"><span class="sp-index">02</span><span class="sp-title">NEXUS</span><span class="sp-pip" id="sys-nexus-pip" aria-hidden="true"></span></div>
-      <div class="status-line"><span id="sys-nexus-dot" class="dot" aria-hidden="true"></span><span id="sys-nexus-text">não consultado</span></div>
-    </section>
-    <section class="sys-panel compact spot" aria-label="Sessão atual">
-      <div class="sp-head"><span class="sp-index">03</span><span class="sp-title">Sessão atual</span><span class="sp-pip on" aria-hidden="true"></span></div>
-      <div class="kv"><span class="k">id</span><span class="v" id="panel-session">—</span></div>
-      <div class="kv"><span class="k">turnos</span><span class="v" id="panel-turns">0</span></div>
-    </section>
-    <section class="sys-panel compact spot" aria-label="Última tarefa">
-      <div class="sp-head"><span class="sp-index">04</span><span class="sp-title">Última tarefa</span><span class="sp-pip" aria-hidden="true"></span></div>
-      <div class="kv"><span class="k">id</span><span class="v" id="panel-task">—</span></div>
-      <div class="kv"><span class="k">estado</span><span class="v" id="panel-task-state">—</span></div>
-    </section>
-  </aside>
-</div>
+  <footer id="statusline" aria-label="Estado do sistema">
+    <span class="sl-seg"><span class="sl-pip" id="sys-core-pip" aria-hidden="true"></span><span class="sl-k">Core</span><span id="sys-core-text">inicializando…</span></span>
+    <span class="sl-seg"><span class="sl-pip" id="sys-nexus-pip" aria-hidden="true"></span><span class="sl-k">Nexus</span><span id="sys-nexus-text">não consultado</span></span>
+    <span class="sl-seg"><span class="sl-k">Session</span><span id="panel-session">—</span></span>
+    <span class="sl-seg"><span class="sl-k">Task</span><span id="panel-task">—</span><span id="panel-task-state"></span></span>
+    <span class="sl-seg"><span class="sl-k">Turns</span><span id="panel-turns">0</span></span>
+  </footer>
+ </div>
 <script>
 (function () {
   "use strict";
@@ -2637,7 +2751,30 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         list.appendChild(emptyRow("Nenhuma memória ainda."));
         return "loaded-empty";
       }
-      items.forEach(function (m, i) {
+      // MEMORY CORE: cluster by the real kind field — density per kind,
+      // no invented relations. A pre-pass counts each cluster.
+      var order = [], groups = {};
+      items.forEach(function (m) {
+        var k = m.kind || "memory";
+        if (!groups[k]) { groups[k] = []; order.push(k); }
+        groups[k].push(m);
+      });
+      var ri = 0;
+      order.forEach(function (kind) {
+        var kh = document.createElement("div");
+        kh.className = "mem-kind";
+        var kn = document.createElement("span");
+        kn.className = "mem-kind-name";
+        kn.textContent = kind;
+        var kc = document.createElement("span");
+        kc.className = "mem-kind-count";
+        kc.textContent = String(groups[kind].length);
+        var knote = document.createElement("span");
+        knote.className = "mem-kind-note";
+        knote.textContent = "registros · não verificados";
+        kh.appendChild(kn); kh.appendChild(kc); kh.appendChild(knote);
+        list.appendChild(kh);
+        groups[kind].forEach(function (m) {
         var row = document.createElement("div");
         row.className = "row";
         // hidden complexity: kind + provenance one hover away
@@ -2661,8 +2798,10 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         // knowledge instrument: each kind gets its own geometric mark —
         // a consistent visual encoding of a real MemoryKind.
         prependChild(side, memoryGlyph(m.kind));
-        stagger(row, i);
+        stagger(row, ri);
         list.appendChild(row);
+        ri++;
+        });
       });
       return "loaded";
     }).catch(function () {
@@ -2727,6 +2866,23 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   }
 
   // ---------- audit view ----------
+  // Pipeline stage names for the execution trace. Strict 1:1 mapping
+  // from real AuditEventType values — presentation only.
+  function auditStage(t) {
+    if (t === "task.created") { return "REQUEST"; }
+    if (t === "task.planned") { return "PLAN"; }
+    if (t === "context.assembled") { return "CONTEXT"; }
+    if (t === "policy.decided") { return "POLICY"; }
+    if (t && t.indexOf("tool.") === 0) { return "EXECUTION"; }
+    if (t === "verification.completed") { return "VERIFY"; }
+    if (t && t.indexOf("llm.") === 0) { return "SYNTHESIS"; }
+    if (t === "task.completed" || t === "task.failed" || t === "task.cancelled") { return "RESULT"; }
+    if (t && t.indexOf("memory.") === 0) { return "MEMORY"; }
+    if (t && t.indexOf("commitment.") === 0) { return "COMMITMENT"; }
+    if (t === "session.created") { return "SESSION"; }
+    return String(t || "EVENT").toUpperCase();
+  }
+
   function loadAuditView() {
     var list = clearList("audit-list");
     if (!list) { return; }
@@ -2735,27 +2891,74 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       done();
       var items = (data && data.items) || [];
       if (!items.length) { list.appendChild(emptyRow("Nenhum evento de auditoria.")); return; }
-      items.forEach(function (ev, i) {
-        var row = document.createElement("div");
-        row.className = "row";
-        var side = document.createElement("div");
-        side.className = "r-side";
-        side.appendChild(badge(ev.outcome || "—", outcomeBadge(ev.outcome)));
-        var detail = document.createElement("div");
-        detail.className = "audit-ev r-main";
-        var lines = [
-          fmtTime(ev.occurred_at) + "  " + (ev.event_type || ""),
-          "actor=" + (ev.actor || "") + "  capability=" + (ev.capability || "—") +
-            "  tool=" + (ev.tool_name || "—") + "  decision=" + (ev.policy_decision || "—"),
-          "task=" + shortId(ev.task_id) + "  session=" + shortId(ev.session_id) +
-            "  corr=" + shortId(ev.correlation_id) + "  duration=" + (ev.duration_ms == null ? "—" : ev.duration_ms + "ms")
-        ];
-        var sum = ev.input_summary || ev.output_summary;
-        if (sum) { lines.push(String(sum)); }
-        detail.textContent = lines.join("\n");
-        row.appendChild(side); row.appendChild(detail);
-        stagger(row, i, 15);
-        list.appendChild(row);
+      // EXECUTION TRACE: consecutive events sharing the backend's real
+      // task_id form one causal trace. Events without a task belong to
+      // the SYSTEM trace. Stage names map 1:1 from real AuditEventType
+      // values — presentation only, nothing inferred.
+      var groups = [];
+      items.forEach(function (ev) {
+        var key = ev.task_id || null;
+        var g = groups[groups.length - 1];
+        if (!g || g.key !== key) {
+          g = { key: key, events: [] };
+          groups.push(g);
+        }
+        g.events.push(ev);
+      });
+      var ti = 0;
+      groups.forEach(function (g) {
+        var trace = document.createElement("div");
+        trace.className = "trace";
+        var head = document.createElement("div");
+        head.className = "trace-head";
+        var name = document.createElement("span");
+        name.className = "trace-name";
+        if (g.key) {
+          name.textContent = "TRACE ";
+          var acc = document.createElement("span");
+          acc.className = "t-accent";
+          acc.textContent = shortId(g.key);
+          name.appendChild(acc);
+        } else {
+          name.textContent = "TRACE SYSTEM";
+        }
+        var tmeta = document.createElement("span");
+        tmeta.className = "trace-meta";
+        tmeta.textContent = fmtTime(g.events[0].occurred_at) + "  ·  " +
+          g.events.length + (g.events.length === 1 ? " evento" : " eventos");
+        head.appendChild(name); head.appendChild(tmeta);
+        trace.appendChild(head);
+        var spine = document.createElement("div");
+        spine.className = "trace-spine";
+        g.events.forEach(function (ev, j) {
+          var node = document.createElement("div");
+          node.className = "tnode";
+          if (ev.outcome) { node.setAttribute("data-outcome", ev.outcome); }
+          var stage = document.createElement("span");
+          stage.className = "tnode-stage";
+          stage.textContent = auditStage(ev.event_type);
+          var detail = document.createElement("div");
+          detail.className = "tnode-detail";
+          var lines = [
+            fmtTime(ev.occurred_at) + "  " + (ev.event_type || ""),
+            "actor=" + (ev.actor || "") + "  capability=" + (ev.capability || "—") +
+              "  tool=" + (ev.tool_name || "—") + "  decision=" + (ev.policy_decision || "—"),
+            "task=" + shortId(ev.task_id) + "  session=" + shortId(ev.session_id) +
+              "  corr=" + shortId(ev.correlation_id) + "  duration=" + (ev.duration_ms == null ? "—" : ev.duration_ms + "ms")
+          ];
+          var sum = ev.input_summary || ev.output_summary;
+          if (sum) { lines.push(String(sum)); }
+          detail.textContent = lines.join("\n");
+          var nside = document.createElement("div");
+          nside.appendChild(badge(ev.outcome || "—", outcomeBadge(ev.outcome)));
+          node.appendChild(stage); node.appendChild(detail); node.appendChild(nside);
+          stagger(node, j, 15);
+          spine.appendChild(node);
+        });
+        trace.appendChild(spine);
+        stagger(trace, ti, 40);
+        list.appendChild(trace);
+        ti++;
       });
     }).catch(function () {
       done();
@@ -3207,6 +3410,26 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       return false;
     });
   }
+
+  /* film grain: procedural noise tile generated once at boot.
+     No external assets, no URL strings — pure canvas. */
+  (function grain() {
+    var el = $("grain");
+    if (!el) return;
+    try {
+      var s = 128, c = document.createElement("canvas");
+      c.width = s; c.height = s;
+      var ctx = c.getContext("2d");
+      var img = ctx.createImageData(s, s), d = img.data;
+      for (var i = 0; i < d.length; i += 4) {
+        var v = (Math.random() * 255) | 0;
+        d[i] = d[i+1] = d[i+2] = v;
+        d[i+3] = 14;
+      }
+      ctx.putImageData(img, 0, 0);
+      el.style.backgroundImage = "url(" + c.toDataURL() + ")";
+    } catch (e) { /* decorative; never break boot */ }
+  })();
 
   // ---------- boot ----------
   function bootCheck(id, ok) {
