@@ -448,9 +448,14 @@ body:has(#view-home:not([hidden])) #syspanel { display: flex; }
   align-items: center;
   justify-content: center;
   gap: 0;
-  padding: 1.2rem 1.6rem 1.4rem;
+  padding: 2.5rem 1.6rem 2rem;
   overflow: hidden; /* the thread scrolls internally, not the page */
 }
+/* Home composition: the orb is the gravitational center. Everything else
+   — display greeting, thread, command line — orbits below it in a single
+   calm column. Asymmetry comes from the telemetry field (bottom-right)
+   and the thread's own rhythm (user right / system full-measure),
+   not from displaced chrome. */
 /* ============================================================
    STATUS SYSTEM — one language for every state in the product.
    ONLINE / OFFLINE / IDLE / PROCESSING / SUCCESS / WARNING / ERROR / UNAVAILABLE.
@@ -479,22 +484,9 @@ body:has(#view-home:not([hidden])) #syspanel { display: flex; }
 .stat-error { color: var(--err); }
 .stat-error .dot { background: var(--err); box-shadow: 0 0 8px var(--aura-err); }
 
-/* home status strip: instrument readout, not a pill */
-#home-status {
-  display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap;
-  font-family: var(--font-mono); font-size: 0.68rem; color: var(--faint);
-  padding: 0.5rem 0.2rem; margin-bottom: 0.4rem;
-  border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
-  background: rgba(7, 11, 18, 0.5);
-  z-index: 1;
-}
-#home-status .hs-item {
-  display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap;
-  padding: 0 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.64rem;
-}
-#home-status .hs-item + .hs-item { border-left: 1px solid var(--hairline); }
-#home-status .hs-item .dot { width: 6px; height: 6px; }
-#home-status .hs-val { color: var(--muted); }
+/* #home-status: retired — its data lives in the floating telemetry field.
+   The rules below are kept only so the responsive override still parses. */
+#home-status { display: none; }
 
 /* orb hero: dead center, large. --orb-size shrinks when chatting. */
 #orb-block {
@@ -519,13 +511,26 @@ body:has(#view-home:not([hidden])) #syspanel { display: flex; }
 #orb-wrap[data-orb="active"] #orb-label { color: var(--accent); }
 #orb-wrap[data-orb="error"] #orb-label { color: var(--err); }
 
-#greeting { text-align: center; margin-top: 2rem; z-index: 1; }
+#greeting { text-align: center; margin-top: 2.4rem; z-index: 1; }
+/* display voice: compressed type inside vast space (Linear school).
+   Large, light, tight — the system speaking, not a page title. */
 #greeting h2 {
-  margin: 0; font-size: clamp(1.4rem, 3.2vmin, 1.9rem); font-weight: 600;
-  letter-spacing: 0.01em;
+  margin: 0;
+  font-size: clamp(2.6rem, 7vmin, 4.4rem);
+  font-weight: var(--display-w);
+  letter-spacing: var(--display-track);
+  line-height: 1.04;
+  color: var(--text);
 }
-#greeting .g-sub { color: var(--muted); font-size: 0.92rem; margin-top: 0.35rem; }
-#state-line { font-family: var(--font-mono); font-size: 0.76rem; color: var(--faint); min-height: 1.3rem; margin-top: 0.5rem; }
+#greeting .g-sub {
+  color: var(--muted); font-size: 1rem; font-weight: 300;
+  margin-top: 0.9rem; letter-spacing: 0.02em;
+}
+#state-line {
+  font-family: var(--font-mono); font-size: 0.7rem; color: var(--whisper);
+  letter-spacing: 0.24em; text-transform: uppercase;
+  min-height: 1.3rem; margin-top: 1.1rem;
+}
 /* greeting reveal: word-by-word stagger on view entry (real page load only) */
 #view-home:not([hidden]) #greeting > * { animation: greetRise var(--d-page) var(--ease-out) both; }
 #view-home:not([hidden]) #greeting > *:nth-child(2) { animation-delay: 90ms; }
@@ -533,15 +538,19 @@ body:has(#view-home:not([hidden])) #syspanel { display: flex; }
 @keyframes greetRise { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
 
 /* thread: appears above the composer when messages exist */
+/* thread: events flowing above the command line. The fade mask keeps the
+   top edge dissolving into the environment — no hard scroll container. */
 #conversation {
   display: none;
-  width: min(760px, 100%);
-  max-height: 34vh; overflow-y: auto;
-  flex-direction: column; gap: 0.8rem;
-  padding: 0.8rem 0.4rem;
+  width: min(780px, 100%);
+  max-height: 38vh; overflow-y: auto;
+  flex-direction: column; gap: 1.6rem;
+  padding: 1.2rem 0.4rem 0.6rem;
   z-index: 1;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, black 6%);
-  mask-image: linear-gradient(to bottom, transparent, black 6%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 7%);
+  mask-image: linear-gradient(to bottom, transparent, black 7%);
+  scrollbar-width: thin;
+  scrollbar-color: var(--whisper) transparent;
 }
 #view-home.has-thread #conversation { display: flex; }
 /* ---------- AI RESPONSE SURFACE ----------
@@ -550,33 +559,74 @@ body:has(#view-home:not([hidden])) #syspanel { display: flex; }
    the meta. User messages stay quiet: faint fill + hairline.
    Entrance: 240ms opacity + rise + blur settle — one calm wave.
    Error messages carry the FAILURE family (never a generic card). */
+/* ---------- CONVERSATION: system events, not chat bubbles ----------
+   The thread is a sequence of events in the environment.
+   - user: the human voice — compact, right-aligned, quieter. No box.
+   - assistant: an event of the system — full measure, flat on the
+     background, the system's voice (larger, lighter). A fading energy
+     line marks the source, not a container.
+   - system: centered whisper. error: color-only signaling (no banners,
+     no layout shifts — the FAILURE family is typographic).
+   Entrance: one calm wave — rise + blur settle. */
 .msg {
   position: relative;
-  max-width: 92%; padding: 0.7rem 0.95rem; border-radius: 4px 12px 12px 12px;
+  max-width: 100%; padding: 0;
   white-space: pre-wrap; word-break: break-word;
-  font-size: 0.93rem; line-height: 1.55;
-  animation: msgEnter 240ms var(--ease-out) both;
-  border: 1px solid transparent;
+  font-size: 0.95rem; line-height: 1.6;
+  background: none; border: none; border-radius: 0;
+  animation: msgEnter 340ms var(--ease-out) both;
 }
 @keyframes msgEnter {
-  from { opacity: 0; transform: translateY(10px); filter: blur(3px); }
+  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
   to { opacity: 1; transform: none; filter: blur(0); }
 }
-.msg.user { align-self: flex-end; background: rgba(255, 255, 255, 0.05); border-color: var(--panel-line); border-radius: 12px 4px 12px 12px; }
-.msg.assistant { align-self: flex-start; background: linear-gradient(180deg, var(--surface-2), var(--surface)); border-color: var(--hairline); }
+.msg.user {
+  align-self: flex-end; text-align: right;
+  max-width: 76%;
+  color: var(--muted);
+  font-size: 0.94rem;
+  padding-right: 1.1rem;
+}
+.msg.user::after {
+  content: ""; position: absolute; right: 0; top: 0.35rem; bottom: 0.35rem; width: 2px;
+  background: linear-gradient(180deg, var(--faint), transparent 85%);
+  opacity: 0.5;
+}
+.msg.assistant {
+  align-self: stretch;
+  color: var(--text);
+  font-size: 1.05rem; font-weight: 350; line-height: 1.72;
+  letter-spacing: 0.008em;
+  padding-left: 1.3rem;
+}
 .msg.assistant::before {
-  content: ""; position: absolute; left: -1px; top: 0.9rem; bottom: 0.9rem; width: 2px;
-  background: linear-gradient(180deg, var(--accent), transparent);
-  opacity: 0.9; pointer-events: none;
+  content: ""; position: absolute; left: 0; top: 0.35rem; bottom: 0.35rem; width: 2px;
+  background: linear-gradient(180deg, var(--accent), transparent 82%);
+  opacity: 0.75; pointer-events: none;
 }
-.msg.system { align-self: center; background: transparent; color: var(--muted); font-size: 0.85rem; border: 1px dashed var(--border); max-width: 96%; }
-.msg.error { align-self: flex-start; background: rgba(248, 81, 73, 0.07); border-color: rgba(248, 81, 73, 0.45); border-left: 2px solid var(--err); color: #ffd9d4; }
+.msg.system {
+  align-self: center; text-align: center;
+  color: var(--whisper); font-size: 0.8rem; font-weight: 300;
+  letter-spacing: 0.06em; max-width: 88%;
+}
+.msg.error {
+  align-self: stretch;
+  color: #ffb4ab; font-size: 0.95rem;
+  padding-left: 1.3rem;
+}
+.msg.error::before {
+  content: ""; position: absolute; left: 0; top: 0.35rem; bottom: 0.35rem; width: 2px;
+  background: linear-gradient(180deg, var(--err), transparent 82%);
+  opacity: 0.8; pointer-events: none;
+}
 .msg .meta {
-  display: flex; align-items: center; gap: 0.5rem;
-  font-size: 0.68rem; color: var(--faint); margin-top: 0.55rem; padding-top: 0.45rem;
-  border-top: 1px solid var(--hairline); font-family: var(--font-mono); letter-spacing: 0.08em;
+  display: block;
+  font-size: 0.64rem; color: var(--whisper);
+  margin-top: 0.5rem; padding-top: 0;
+  border-top: none; font-family: var(--font-mono); letter-spacing: 0.14em;
 }
-.msg .meta::before { content: ""; width: 6px; height: 1px; background: var(--tick); flex: none; }
+.msg .meta::before { display: none; }
+.msg.user .meta { text-align: right; }
 
 /* ---------- COMMAND SURFACE: the orb's instrument, not a form ----------
    Two surface families: panels own technical geometry; the command
@@ -584,111 +634,99 @@ body:has(#view-home:not([hidden])) #syspanel { display: flex; }
    Energy line = distilled plasma filament: idle faint, focus lit,
    typing brighter, processing sweeping. Every state is real. */
 @property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
-#composer-zone { width: min(720px, 100%); z-index: 1; margin-top: 1.1rem; }
+/* ---------- COMMAND SURFACE: a command line, not a form ----------
+   No box. The composer is a line in the environment: prompt glyph,
+   text, dispatch key. The energy line underneath is the orb's filament
+   distilled — idle invisible, focus lit, typing bright, processing
+   sweeping. The system perceives presence through light, not chrome. */
+#composer-zone { width: min(760px, 100%); z-index: 1; margin-top: 2.4rem; }
 #composer {
   position: relative;
-  display: flex; gap: 0.55rem; align-items: flex-end;
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgba(63, 224, 195, 0.045), transparent 55%),
-    linear-gradient(180deg, var(--surface-2), var(--surface));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 0.6rem 0.6rem 0.6rem 0.5rem;
-  transition: border-color var(--d-fast), box-shadow var(--d-med), transform var(--d-med) var(--ease-out);
-  backdrop-filter: blur(12px);
+  display: flex; gap: 0.85rem; align-items: flex-end;
+  background: none; border: none; border-radius: 0;
+  border-bottom: 1px solid var(--hairline);
+  padding: 0.9rem 0.15rem;
+  backdrop-filter: none;
+  transition: border-color var(--d-med);
 }
-/* energy line: the filament. Lives on the top edge. */
+#composer:hover { border-bottom-color: rgba(255, 255, 255, 0.16); }
+#composer:focus-within { border-bottom-color: var(--accent-dim); }
+/* energy line: the filament. Lives on the baseline. */
 .cmd-energy {
-  position: absolute; top: -1px; left: 8%; right: 8%; height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent, var(--tick) 30%, var(--accent) 50%, var(--tick) 70%, transparent);
-  opacity: 0.18;
+  position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  opacity: 0;
   transition: opacity var(--d-med);
   pointer-events: none;
 }
-/* prompt glyph: the surface speaks terminal, not web form */
+/* prompt glyph: the surface speaks command, not web form */
 .cmd-prompt {
   flex: none; align-self: center;
-  font-family: var(--font-mono); font-size: 1.25rem; line-height: 1;
-  color: var(--faint); padding: 0 0.1rem 0 0.55rem;
-  transition: color var(--d-fast), text-shadow var(--d-fast);
+  font-family: var(--font-mono); font-size: 1.35rem; line-height: 1;
+  color: var(--whisper); padding: 0 0.1rem;
+  transition: color var(--d-med), text-shadow var(--d-med);
   user-select: none;
 }
-/* INPUT SYSTEM — idle / hover / focus / typing / busy / disabled.
-   Hover brightens toward white-alpha (HUD law), never toward hue. */
-#composer:hover { border-color: #2b3d64; }
-#composer:focus-within {
-  border-color: rgba(63, 224, 195, 0.5);
-  box-shadow: 0 0 0 3px rgba(63, 224, 195, 0.07), 0 8px 32px rgba(0, 0, 0, 0.45);
-  transform: translateY(-1px);
+#composer:hover .cmd-prompt { color: var(--faint); }
+#composer:focus-within .cmd-energy { opacity: 1; }
+#composer:focus-within .cmd-prompt {
+  color: var(--accent);
+  text-shadow: 0 0 12px rgba(63, 224, 195, 0.6);
 }
-#composer:focus-within .cmd-energy { opacity: 0.9; }
-#composer:focus-within .cmd-prompt { color: var(--accent); text-shadow: 0 0 10px var(--accent-glow); }
-#composer.typing .cmd-energy { opacity: 1; box-shadow: 0 0 12px var(--accent-glow); }
-#composer.busy { border-color: rgba(63, 224, 195, 0.5); }
-#composer.busy .cmd-energy { opacity: 1; animation: energySweep 1.8s linear infinite; }
-@keyframes energySweep {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
+#composer.typing .cmd-energy { opacity: 1; }
+#composer.busy { border-bottom-color: var(--accent-dim); }
 #composer.busy .cmd-energy {
+  opacity: 1;
   background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
   background-size: 200% 100%;
+  animation: energySweep 1.6s linear infinite;
 }
-/* border beam: animated conic border while processing (real state only) */
-#composer.beam::before {
-  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
-  background: conic-gradient(from var(--beam-angle),
-    transparent 0deg, transparent 250deg,
-    var(--accent) 300deg, #8fd8ff 330deg, transparent 360deg);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  pointer-events: none;
-  animation: beamSpin 2.6s linear infinite;
-  opacity: 0.85;
+@keyframes energySweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
-@keyframes beamSpin { to { --beam-angle: 360deg; } }
+/* beam: the processing pulse — a glow traveling the line (real state only).
+   (dashboard era: conic border around a box — retired) */
+#composer.beam::before { display: none; }
+@property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
 #input {
   flex: 1; resize: none; background: transparent; color: var(--text);
-  border: none; outline: none; padding: 0.6rem 0.2rem;
-  font: inherit; font-size: 0.95rem; min-height: 2.4rem; max-height: 9rem;
+  border: none; outline: none; padding: 0.5rem 0.1rem;
+  font: inherit; font-size: 1.02rem; font-weight: 340; letter-spacing: 0.01em;
+  min-height: 2.2rem; max-height: 9rem; line-height: 1.5;
 }
 #input:disabled { opacity: 0.55; }
-#input::placeholder { color: var(--faint); }
+#input::placeholder { color: var(--whisper); font-weight: 300; }
 /* dispatch key: one control that morphs with the real request state.
-   Idle = quiet teal key; hover = 1px lift + glow; active = press;
-   stop = danger morph (real cancellation state). */
+   Idle = quiet mono key; hover = brightens toward white then teal;
+   stop = danger morph (real cancellation state). No box, no fill —
+   the key is a gesture, not a button. */
 #send {
   position: relative; flex: none;
-  width: 2.9rem; height: 2.9rem; border-radius: 12px;
-  background: linear-gradient(180deg, #4ce8cc, var(--accent) 60%, #2bd3b2);
-  color: #04231d; border: 1px solid rgba(63, 224, 195, 0.65);
-  font-size: 1.15rem; line-height: 1; cursor: pointer;
+  width: auto; height: auto;
+  background: none; border: none; border-radius: 0; box-shadow: none;
+  color: var(--whisper);
+  font-family: var(--font-mono); font-size: 1.45rem; line-height: 1;
+  padding: 0.6rem 0.3rem; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  transition: transform var(--d-fast) var(--ease-out), box-shadow var(--d-fast), opacity var(--d-fast), background var(--d-fast), border-color var(--d-fast);
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 10px rgba(63, 224, 195, 0.18);
+  transition: color var(--d-fast), transform var(--d-fast) var(--ease-out), opacity var(--d-fast);
+  overflow: visible;
 }
-#send::after { /* hover shimmer sweep */
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
-  transform: translateX(-120%);
-}
-#send:hover:not(:disabled)::after { transform: translateX(120%); transition: transform 0.5s var(--ease-out); }
-#send:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
-#send:active:not(:disabled) { transform: translateY(0) scale(0.94); }
-#send:disabled { opacity: 0.45; cursor: default; }
-#send.is-stop { background: var(--err); color: #fff; font-size: 0.85rem; }
-#send.is-stop::after { display: none; }
-/* kbd hints */
+#send::after { display: none; }
+#send:hover:not(:disabled) { color: var(--accent); transform: translateY(-1px); box-shadow: none; }
+#send:active:not(:disabled) { transform: translateY(0) scale(0.92); }
+#send:disabled { opacity: 0.4; cursor: default; }
+#send.is-stop { color: var(--err); background: none; font-size: 1.1rem; }
+#send.is-stop:hover:not(:disabled) { color: #ff8a80; }
+/* kbd hints: whisper, not keys */
 #composer-hints {
-  display: flex; justify-content: center; gap: 0.9rem; margin-top: 0.55rem;
-  font-family: var(--font-mono); font-size: 0.66rem; color: var(--faint);
+  display: flex; justify-content: center; gap: 1.2rem; margin-top: 0.8rem;
+  font-family: var(--font-mono); font-size: 0.62rem; color: var(--whisper);
+  letter-spacing: 0.1em;
 }
 #composer-hints kbd {
-  font-family: inherit; font-size: 0.64rem; color: var(--muted);
-  border: 1px solid var(--hairline); border-bottom-width: 2px; border-radius: 5px;
-  padding: 0.05rem 0.35rem; background: rgba(255,255,255,0.03);
+  font-family: inherit; font-size: inherit; color: var(--faint);
+  border: none; border-radius: 0; padding: 0; background: none;
 }
 /* ============================================================
    BUTTON SYSTEM — one language, every view.
@@ -1067,12 +1105,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   <main id="main">
     <!-- HOME: command experience — plasma orb at the center -->
     <section class="view" id="view-home" aria-label="Home">
-      <div id="home-status" aria-label="Estado do sistema">
-        <span class="hs-item stat" id="hs-backend-stat"><span id="hs-backend-dot" class="dot" aria-hidden="true"></span><span id="hs-backend">verificando…</span></span>
-        <span class="hs-item">sessão <span class="hs-val" id="hs-session">—</span></span>
-        <span class="hs-item"><span class="hs-val" id="hs-turns">0</span>&nbsp;turnos</span>
-        <span class="hs-item">tarefa <span class="hs-val" id="hs-task">—</span></span>
-      </div>
+      <!-- home-status retired: backend/session/turns/task live in the
+           floating telemetry field (#syspanel). No duplicate strip. -->
       <div id="orb-block">
         <div id="orb-wrap" data-orb="idle">
           <canvas id="orb" width="560" height="560" aria-hidden="true"></canvas>
