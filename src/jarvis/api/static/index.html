@@ -389,16 +389,48 @@ body {
   padding: 1.2rem 1.6rem 1.4rem;
   overflow: hidden; /* the thread scrolls internally, not the page */
 }
-/* slim status strip — dot + text, mono, hairlines */
+/* ============================================================
+   STATUS SYSTEM — one language for every state in the product.
+   ONLINE / OFFLINE / IDLE / PROCESSING / SUCCESS / WARNING / ERROR / UNAVAILABLE.
+   Typography: mono, tracked, uppercase. Icon: dot with aura.
+   Motion only with reason: processing sweeps, live breathes once.
+   ============================================================ */
+.stat {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: var(--font-mono); font-size: 0.68rem;
+  letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap;
+}
+.stat .dot { width: 7px; height: 7px; }
+.stat-online { color: var(--ok); }
+.stat-online .dot { background: var(--ok); box-shadow: 0 0 8px var(--aura-ok); animation: pulse-dot 3.2s ease-in-out infinite; }
+.stat-offline, .stat-unavailable { color: var(--faint); }
+.stat-offline .dot, .stat-unavailable .dot { background: var(--faint); }
+.stat-idle { color: var(--muted); }
+.stat-idle .dot { background: var(--muted); }
+.stat-processing { color: var(--accent); }
+.stat-processing .dot { background: var(--accent); box-shadow: 0 0 8px var(--aura-accent); animation: statSweep 1.4s ease-in-out infinite; }
+@keyframes statSweep { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
+.stat-success { color: var(--ok); }
+.stat-success .dot { background: var(--ok); box-shadow: 0 0 8px var(--aura-ok); }
+.stat-warning { color: var(--warn); }
+.stat-warning .dot { background: var(--warn); box-shadow: 0 0 8px var(--aura-warn); }
+.stat-error { color: var(--err); }
+.stat-error .dot { background: var(--err); box-shadow: 0 0 8px var(--aura-err); }
+
+/* home status strip: instrument readout, not a pill */
 #home-status {
-  display: flex; align-items: center; justify-content: center; gap: 1.2rem; flex-wrap: wrap;
-  font-family: var(--font-mono); font-size: 0.7rem; color: var(--faint);
-  padding: 0.55rem 1rem; margin-bottom: 0.4rem;
-  border: 1px solid var(--hairline); border-radius: 999px;
+  display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap;
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--faint);
+  padding: 0.5rem 0.2rem; margin-bottom: 0.4rem;
+  border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
   background: rgba(7, 11, 18, 0.5);
   z-index: 1;
 }
-#home-status .hs-item { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+#home-status .hs-item {
+  display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap;
+  padding: 0 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.64rem;
+}
+#home-status .hs-item + .hs-item { border-left: 1px solid var(--hairline); }
 #home-status .hs-item .dot { width: 6px; height: 6px; }
 #home-status .hs-val { color: var(--muted); }
 
@@ -450,19 +482,39 @@ body {
   mask-image: linear-gradient(to bottom, transparent, black 6%);
 }
 #view-home.has-thread #conversation { display: flex; }
+/* ---------- AI RESPONSE SURFACE ----------
+   Assistant messages are the product's output surface: a signal line
+   (2px teal fading) marks the source; a technical index tick marks
+   the meta. User messages stay quiet: faint fill + hairline.
+   Entrance: 240ms opacity + rise + blur settle — one calm wave.
+   Error messages carry the FAILURE family (never a generic card). */
 .msg {
-  max-width: 88%; padding: 0.65rem 0.95rem; border-radius: 12px;
+  position: relative;
+  max-width: 92%; padding: 0.7rem 0.95rem; border-radius: 4px 12px 12px 12px;
   white-space: pre-wrap; word-break: break-word;
   font-size: 0.93rem; line-height: 1.55;
-  animation: rise var(--d-med) var(--ease-out) both;
+  animation: msgEnter 240ms var(--ease-out) both;
   border: 1px solid transparent;
 }
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.msg.user { align-self: flex-end; background: rgba(63, 224, 195, 0.10); border-color: rgba(63, 224, 195, 0.28); }
-.msg.assistant { align-self: flex-start; background: var(--surface-2); border-color: var(--hairline); }
-.msg.system { align-self: center; background: transparent; color: var(--muted); font-size: 0.85rem; border: 1px dashed var(--border); }
-.msg.error { align-self: flex-start; background: rgba(248, 81, 73, 0.08); border-color: rgba(248, 81, 73, 0.45); color: #ffb4ab; }
-.msg .meta { font-size: 0.68rem; color: var(--faint); margin-top: 0.4rem; font-family: var(--font-mono); }
+@keyframes msgEnter {
+  from { opacity: 0; transform: translateY(10px); filter: blur(3px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+.msg.user { align-self: flex-end; background: rgba(255, 255, 255, 0.05); border-color: var(--panel-line); border-radius: 12px 4px 12px 12px; }
+.msg.assistant { align-self: flex-start; background: linear-gradient(180deg, var(--surface-2), var(--surface)); border-color: var(--hairline); }
+.msg.assistant::before {
+  content: ""; position: absolute; left: -1px; top: 0.9rem; bottom: 0.9rem; width: 2px;
+  background: linear-gradient(180deg, var(--accent), transparent);
+  opacity: 0.9; pointer-events: none;
+}
+.msg.system { align-self: center; background: transparent; color: var(--muted); font-size: 0.85rem; border: 1px dashed var(--border); max-width: 96%; }
+.msg.error { align-self: flex-start; background: rgba(248, 81, 73, 0.07); border-color: rgba(248, 81, 73, 0.45); border-left: 2px solid var(--err); color: #ffd9d4; }
+.msg .meta {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.68rem; color: var(--faint); margin-top: 0.55rem; padding-top: 0.45rem;
+  border-top: 1px solid var(--hairline); font-family: var(--font-mono); letter-spacing: 0.08em;
+}
+.msg .meta::before { content: ""; width: 6px; height: 1px; background: var(--tick); flex: none; }
 
 /* ---------- COMMAND SURFACE: the orb's instrument, not a form ----------
    Two surface families: panels own technical geometry; the command
@@ -748,11 +800,16 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   max-height: 320px; overflow-y: auto;
 }
 
-/* thinking indicator */
-.thinking { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 0.85rem; }
+/* thinking: the instrument's "processing" readout — real state only */
+.thinking {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--accent);
+  padding: 0.35rem 0;
+}
 .spinner {
-  width: 16px; height: 16px; border-radius: 50%; flex: none;
-  border: 2px solid var(--border); border-top-color: var(--accent);
+  width: 14px; height: 14px; border-radius: 50%; flex: none;
+  border: 2px solid rgba(63, 224, 195, 0.2); border-top-color: var(--accent);
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -898,7 +955,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <!-- HOME: command experience — plasma orb at the center -->
     <section class="view" id="view-home" aria-label="Home">
       <div id="home-status" aria-label="Estado do sistema">
-        <span class="hs-item"><span id="hs-backend-dot" class="dot" aria-hidden="true"></span><span id="hs-backend">verificando…</span></span>
+        <span class="hs-item stat" id="hs-backend-stat"><span id="hs-backend-dot" class="dot" aria-hidden="true"></span><span id="hs-backend">verificando…</span></span>
         <span class="hs-item">sessão <span class="hs-val" id="hs-session">—</span></span>
         <span class="hs-item"><span class="hs-val" id="hs-turns">0</span>&nbsp;turnos</span>
         <span class="hs-item">tarefa <span class="hs-val" id="hs-task">—</span></span>
@@ -1098,6 +1155,9 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function updateHomeStatus() {
     var ok = S.backendOk;
     setDot("hs-backend-dot", ok === true ? "ok" : (ok === false ? "down" : ""));
+    // status system: the stat class mirrors the same truth as the dot
+    var st = $("hs-backend-stat");
+    if (st) { st.className = "hs-item stat " + (ok === true ? "stat-online" : (ok === false ? "stat-offline" : "stat-idle")); }
     setText("hs-backend", ok === true ? "online" : (ok === false ? "indisponível" : "verificando…"));
     setText("hs-session", S.sessionId ? shortId(S.sessionId) : "—");
     setText("hs-turns", String(S.turns));
