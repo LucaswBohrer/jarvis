@@ -1396,8 +1396,8 @@ body::after {
 /* spatial view transitions: the interface has geography.
    Changing views is changing instruments in the same machine:
    a hairline signal sweeps across as the new instrument arrives.
-   Direction follows data-dir (fwd: left->right, back: right->left). */
-.view { position: relative; }
+   Direction follows data-dir (fwd: left->right, back: right->left).
+   (.view is already positioned, so the ::before resolves against it.) */
 .view-enter { animation: view-in var(--d-page) var(--ease-spatial); }
 @keyframes view-in {
   from { opacity: 0; transform: translateY(14px); }
