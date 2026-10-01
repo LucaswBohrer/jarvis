@@ -38,6 +38,20 @@
   --radius: 10px;
   --radius-sm: 6px;
   --radius-lg: 16px;
+  /* ---- system panel geometry: technical corner cuts, not rounded boxes ---- */
+  --cut: 12px;
+  --cut-sm: 8px;
+  /* ---- panel surfaces: layered solids (depth through shade, not glass) ---- */
+  --panel: #0a101c;
+  --panel-2: #0d1526;
+  --panel-line: #1d2a46;
+  --tick: rgba(63, 224, 195, 0.6); /* energy tick: the orb's plasma, distilled */
+  /* ---- status aura (glow follows semantics, never decoration) ---- */
+  --aura-ok: rgba(63, 185, 80, 0.4);
+  --aura-warn: rgba(210, 153, 34, 0.4);
+  --aura-err: rgba(248, 81, 73, 0.4);
+  --aura-info: rgba(88, 166, 255, 0.4);
+  --aura-accent: rgba(63, 224, 195, 0.4);
   /* ---- motion tokens (single source of truth) ---- */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
@@ -268,6 +282,65 @@ body {
 .kv .k { color: var(--faint); }
 .kv .v { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text); text-align: right; word-break: break-all; }
 .status-line { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; }
+
+/* ============================================================
+   JARVIS SYSTEM PANEL — the proprietary surface language.
+   The orb owns plasma; panels own geometry: technical corner
+   cuts, hairline contour, instrument header (index + tracked
+   label + live status pip), layered solid surfaces. Depth
+   through shade, never glassmorphism.
+   ============================================================ */
+.sys-panel {
+  position: relative;
+  background: linear-gradient(165deg, var(--panel-2) 0%, var(--panel) 70%);
+  border: 1px solid var(--panel-line);
+  clip-path: polygon(
+    var(--cut) 0, 100% 0,
+    100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%,
+    0 100%, 0 var(--cut)
+  );
+  padding: 0.9rem 1rem 0.95rem;
+  transition: border-color var(--d-fast);
+}
+/* energy ticks: two L-marks on the cut corners — the panel's signature */
+.sys-panel::before, .sys-panel::after {
+  content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none;
+  border: 0 solid var(--tick); opacity: 0.55;
+  transition: opacity var(--d-fast);
+}
+.sys-panel::before { top: 5px; left: 5px; border-top-width: 1.5px; border-left-width: 1.5px; }
+.sys-panel::after { bottom: 5px; right: 5px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+.sys-panel:hover { border-color: #2a3c63; }
+.sys-panel:hover::before, .sys-panel:hover::after { opacity: 1; }
+/* instrument header */
+.sp-head {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  margin-bottom: 0.7rem; padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.sp-index { font-family: var(--font-mono); font-size: 0.62rem; color: var(--faint); }
+.sp-title {
+  font-size: 0.64rem; letter-spacing: 0.26em; color: var(--muted);
+  font-weight: 650; text-transform: uppercase;
+}
+.sp-pip {
+  margin-left: auto; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--faint); flex: none; align-self: center;
+  transition: background var(--d-fast), box-shadow var(--d-fast);
+}
+.sp-pip.on { background: var(--accent); box-shadow: 0 0 8px var(--aura-accent); }
+.sp-pip.ok { background: var(--ok); box-shadow: 0 0 8px var(--aura-ok); }
+.sp-pip.down { background: var(--err); box-shadow: 0 0 8px var(--aura-err); }
+.sp-pip.warn { background: var(--warn); box-shadow: 0 0 8px var(--aura-warn); }
+/* compact variant for dense stacks */
+.sys-panel.compact { --cut: var(--cut-sm); padding: 0.7rem 0.85rem; }
+/* pointer spotlight for panels: layered over the solid surface (no pseudo-element,
+   so it never fights the corner ticks). --mx/--my are set by the JS spot tracker. */
+.sys-panel.spot:hover {
+  background-image:
+    radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), rgba(63, 224, 195, 0.07), transparent 65%),
+    linear-gradient(165deg, var(--panel-2) 0%, var(--panel) 70%);
+}
 
 /* ============================================================
    Home: command experience — orb as the center of the screen.
@@ -784,7 +857,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         <span class="spacer"></span>
         <div class="toolbar"><button class="btn" id="nexus-query" type="button">Consultar agora</button></div>
       </div>
-      <div class="panel-card spot">
+      <section class="sys-panel spot" aria-label="Instrumento NEXUS">
+        <div class="sp-head"><span class="sp-index">NX</span><span class="sp-title">Instrumento</span><span class="sp-pip" id="nexus-pip" aria-hidden="true"></span></div>
         <div class="nexus-hero">
           <span class="nexus-ring" id="nexus-ring"><span id="nexus-status-dot" class="dot" aria-hidden="true"></span></span>
           <div>
@@ -792,7 +866,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
             <div class="note" id="nexus-note">O status só muda após uma consulta real. A UI nunca inventa estado.</div>
           </div>
         </div>
-      </div>
+      </section>
       <h3 class="mono" style="font-size:0.72rem;letter-spacing:0.24em;color:var(--faint);margin:0.4rem 0 0;">ÚLTIMA RESPOSTA</h3>
       <div id="nexus-last"><span class="note">Nenhuma consulta nesta sessão.</span></div>
       <div id="nexus-prov" aria-label="Proveniência da resposta"></div>
@@ -801,52 +875,52 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     <!-- SYSTEM -->
     <section class="view" id="view-system" aria-label="Sistema" hidden>
       <div class="view-head"><h2>SISTEMA</h2><span class="vh-sub">estado operacional</span></div>
-      <div class="panel-card spot">
-        <h3>BACKEND</h3>
+      <section class="sys-panel spot" aria-label="Backend">
+        <div class="sp-head"><span class="sp-index">01</span><span class="sp-title">Backend</span><span class="sp-pip on" aria-hidden="true"></span></div>
         <div class="kv"><span class="k">status</span><span class="v" id="sys-backend">—</span></div>
         <div class="kv"><span class="k">pronto</span><span class="v" id="sys-ready">—</span></div>
         <div class="kv"><span class="k">versão</span><span class="v" id="sys-version">—</span></div>
         <div class="kv"><span class="k">schema do banco</span><span class="v" id="sys-schema">—</span></div>
         <div class="kv"><span class="k">policy</span><span class="v" id="sys-policy">—</span></div>
         <div class="kv"><span class="k">schema de memória</span><span class="v" id="sys-memschema">—</span></div>
-      </div>
-      <div class="panel-card spot">
-        <h3>SESSÃO</h3>
+      </section>
+      <section class="sys-panel spot" aria-label="Sessão">
+        <div class="sp-head"><span class="sp-index">02</span><span class="sp-title">Sessão</span><span class="sp-pip on" aria-hidden="true"></span></div>
         <div class="kv"><span class="k">id atual</span><span class="v" id="sys-session">—</span></div>
-      </div>
-      <div class="panel-card spot">
-        <h3>EXIBIÇÃO</h3>
+      </section>
+      <section class="sys-panel spot" aria-label="Exibição">
+        <div class="sp-head"><span class="sp-index">03</span><span class="sp-title">Exibição</span><span class="sp-pip" aria-hidden="true"></span></div>
         <div class="kv"><span class="k">reduzir movimento</span><span class="v"><input type="checkbox" id="motion-toggle" aria-label="Reduzir movimento"></span></div>
         <p class="note">Também respeita a preferência do sistema operacional (<span class="mono">prefers-reduced-motion</span>).</p>
-      </div>
-      <div class="panel-card spot">
-        <h3>ATALHOS</h3>
+      </section>
+      <section class="sys-panel spot" aria-label="Atalhos">
+        <div class="sp-head"><span class="sp-index">04</span><span class="sp-title">Atalhos</span><span class="sp-pip" aria-hidden="true"></span></div>
         <div class="kv"><span class="k">enviar</span><span class="v">Enter</span></div>
         <div class="kv"><span class="k">quebra de linha</span><span class="v">Shift+Enter</span></div>
         <div class="kv"><span class="k">cancelar envio</span><span class="v">Esc</span></div>
-      </div>
+      </section>
     </section>
   </main>
 
   <aside id="syspanel" aria-label="Painel do sistema">
-    <div class="panel-card spot">
-      <h3>NÚCLEO</h3>
+    <section class="sys-panel compact spot" aria-label="Núcleo">
+      <div class="sp-head"><span class="sp-index">01</span><span class="sp-title">Núcleo</span><span class="sp-pip" id="sys-core-pip" aria-hidden="true"></span></div>
       <div class="status-line"><span id="sys-core-dot" class="dot" aria-hidden="true"></span><span id="sys-core-text">inicializando&hellip;</span></div>
-    </div>
-    <div class="panel-card spot">
-      <h3>NEXUS</h3>
+    </section>
+    <section class="sys-panel compact spot" aria-label="NEXUS">
+      <div class="sp-head"><span class="sp-index">02</span><span class="sp-title">NEXUS</span><span class="sp-pip" id="sys-nexus-pip" aria-hidden="true"></span></div>
       <div class="status-line"><span id="sys-nexus-dot" class="dot" aria-hidden="true"></span><span id="sys-nexus-text">não consultado</span></div>
-    </div>
-    <div class="panel-card spot">
-      <h3>SESSÃO ATUAL</h3>
+    </section>
+    <section class="sys-panel compact spot" aria-label="Sessão atual">
+      <div class="sp-head"><span class="sp-index">03</span><span class="sp-title">Sessão atual</span><span class="sp-pip on" aria-hidden="true"></span></div>
       <div class="kv"><span class="k">id</span><span class="v" id="panel-session">—</span></div>
       <div class="kv"><span class="k">turnos</span><span class="v" id="panel-turns">0</span></div>
-    </div>
-    <div class="panel-card spot">
-      <h3>ÚLTIMA TAREFA</h3>
+    </section>
+    <section class="sys-panel compact spot" aria-label="Última tarefa">
+      <div class="sp-head"><span class="sp-index">04</span><span class="sp-title">Última tarefa</span><span class="sp-pip" aria-hidden="true"></span></div>
       <div class="kv"><span class="k">id</span><span class="v" id="panel-task">—</span></div>
       <div class="kv"><span class="k">estado</span><span class="v" id="panel-task-state">—</span></div>
-    </div>
+    </section>
   </aside>
 </div>
 <script>
@@ -870,6 +944,13 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
   function setDot(id, cls) {
     var el = $(id);
     if (el) { el.className = "dot" + (cls ? " " + cls : ""); }
+  }
+
+  // Instrument pip: mirrors a status dot in a panel header.
+  // Same truth as the dot, never an independent state.
+  function setPip(id, cls) {
+    var el = $(id);
+    if (el) { el.className = "sp-pip" + (cls ? " " + cls : ""); }
   }
 
   // Home system strip: renders ONLY real app state (backend -> app -> UI).
@@ -1718,6 +1799,8 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
     var label = mapped ? mapped.label : (st === "up" ? "online" : (st === "down" ? "indisponível" : "não consultado"));
     setDot("nexus-status-dot", dotCls);
     setDot("sys-nexus-dot", st === "up" ? "ok" : (st === "down" ? "down" : ""));
+    setPip("sys-nexus-pip", st === "up" ? "ok" : (st === "down" ? "down" : ""));
+    setPip("nexus-pip", dotCls); // same truth as the instrument dot
     var ring = $("nexus-ring");
     if (ring && ring.classList) {
       ring.classList.remove("up", "down");
@@ -2089,6 +2172,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
         if (el) { el.textContent = ok ? ("Online (v" + (data.version || "?") + ")") : "Unavailable"; }
         setDot("status-dot", ok ? "ok" : "down");
         setDot("sys-core-dot", ok ? "ok" : "down");
+        setPip("sys-core-pip", ok ? "ok" : "down");
         setText("sys-core-text", ok ? "online" : "indisponível");
         setText("sys-backend", ok ? "ok" : "degradado");
         if (!ok) { setState("backend indisponível"); }
@@ -2100,6 +2184,7 @@ button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline
       setText("backend-status", "Unavailable");
       setDot("status-dot", "down");
       setDot("sys-core-dot", "down");
+      setPip("sys-core-pip", "down");
       setText("sys-core-text", "indisponível");
       setText("sys-backend", "indisponível");
       updateHomeStatus();
